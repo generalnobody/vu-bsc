@@ -17,7 +17,8 @@ formats_dict = {
     'dia': "Diagonal Storage",
     'bsr': "Block Compressed Row Storage",
     'lil': "List of Lists",
-    'dok': "Dictionary of Keys"
+    'dok': "Dictionary of Keys",
+    'all': "All of the above"
 }
 
 modes_dict = {
@@ -58,13 +59,13 @@ class ModeHelpAction(argparse.Action):
         prs.exit()
 
 
-help_group = parser.add_argument_group('Additional help')
+help_group = parser.add_argument_group('additional help')
 help_group.add_argument('--format_help', help="show additional information about the possible formats and exit",
                         action=FormatHelpAction, nargs=0)
 help_group.add_argument('--mode_help', help="show additional information about the possible modes and exit",
                         action=ModeHelpAction, nargs=0)
 
-parser.add_argument('-b', '--benchmark', action='store_true', help="select if you want to run benchmark")
+parser.add_argument('-b', '--benchmark', type=int, help="select the number of times to benchmark the chosen mode (default = 0, disables benchmark and runs the chosen function once)")
 parser.add_argument('--format', choices=format_options, help="choose sparse matrix format to use (Required)",
                     required=True)
 parser.add_argument('--mode', choices=mode_options, help="choose the function to execute (Required)", required=True)
@@ -79,7 +80,14 @@ parser.add_argument('--index',
 
 args = parser.parse_args()
 
+if args.benchmark < 0:
+    parser.error("value for --benchmark must be greater than or equal to 0")
+elif args.benchmark == 0 and args.format == "all":
+    parser.error("format 'all' only for benchmarking; to use, set --benchmark to greater than 0")
+
 matrix_a = load_mm_file(args.path_a, args.format)
+if matrix_a is None:
+    parser.exit() # TODO: catch exceptions here and everywhere else
 
 if args.mode == "add" or args.mode == "sub" or args.mode == "mmm":
     if args.path_b is None:
@@ -112,25 +120,29 @@ elif args.mode == "full":
     else:
         row_index = args.index
 
-result = 0
-if args.mode == "spr":
-    result = mtx_splice_row(matrix_a, row_index)
-elif args.mode == "spc":
-    result = mtx_splice_column(matrix_a, column_index)
-elif args.mode == "add":
-    result = mtx_addition(matrix_a, matrix_b)
-elif args.mode == "sub":
-    result = mtx_subtraction(matrix_a, matrix_b)
-elif args.mode == "sm":
-    result = mtx_scalar_multiplication(args.scalar, matrix_a)
-elif args.mode == "mvm":
-    sp_vector = mtx_splice_row(matrix_a, row_index)
-    result = mtx_matrix_vector_multiplication(matrix_a, sp_vector)
-elif args.mode == "mmm":
-    result = mtx_matrix_matrix_multiplication(matrix_a, matrix_b)
-elif args.mode == "tps":
-    result = mtx_transposition(matrix_a)
-elif args.mode == "inv":
-    result = mtx_inversion(matrix_a)
+if args.benchmark:
+    print("benchmarking")
+    # TODO: handle calling benchmarking function with depending on mode
+else:
+    result = 0
+    if args.mode == "spr":
+        result = mtx_splice_row(matrix_a, row_index)
+    elif args.mode == "spc":
+        result = mtx_splice_column(matrix_a, column_index)
+    elif args.mode == "add":
+        result = mtx_addition(matrix_a, matrix_b)
+    elif args.mode == "sub":
+        result = mtx_subtraction(matrix_a, matrix_b)
+    elif args.mode == "sm":
+        result = mtx_scalar_multiplication(args.scalar, matrix_a)
+    elif args.mode == "mvm":
+        sp_vector = mtx_splice_row(matrix_a, row_index)
+        result = mtx_matrix_vector_multiplication(matrix_a, sp_vector)
+    elif args.mode == "mmm":
+        result = mtx_matrix_matrix_multiplication(matrix_a, matrix_b)
+    elif args.mode == "tps":
+        result = mtx_transposition(matrix_a)
+    elif args.mode == "inv":
+        result = mtx_inversion(matrix_a)
 
-print(result)
+    print(result)

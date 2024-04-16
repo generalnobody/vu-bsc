@@ -9,7 +9,7 @@ def is_mm_format(file_path):
         with open(file_path, "r") as file:
             line = file.readline()
 
-        print(line)
+        # print(line)
 
         if line.startswith("%%MatrixMarket") and "matrix" in line \
                 and "coordinate" in line:
