@@ -7,6 +7,7 @@ from loader import load_mm_file
 from functions import *
 from results import *
 from benchmark import *
+from output import *
 
 global matrix_b, sp_vector, row_index, column_index
 
@@ -76,6 +77,7 @@ parser.add_argument('--path_b',
 parser.add_argument('--scalar', type=int, help="scalar value used for the chosen function (Required for mode sm)")
 parser.add_argument('--index', type=int,
                     help="index of the row/column in the matrix to select for splicing or as vector (Optional for modes spr, spc and mvm)")
+parser.add_argument('-o', '--out', help="path to save the result to, otherwise it gets printed to stdout")
 
 args = parser.parse_args()
 
@@ -167,4 +169,7 @@ else:
     elif args.mode == "inv":  # TODO: maybe remove this operation from tests, since it only supports CSC and CSR
         result = mtx_inversion(matrix_a)
 
-    print(result)
+    if args.out is None:
+        print(result)
+    else:
+        write_mm_file(args.out, result)

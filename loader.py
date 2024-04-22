@@ -8,6 +8,7 @@ def is_mm_format(file_path):
     try:
         with open(file_path, "r") as file:
             line = file.readline()
+            file.close()
 
         # print(line)
 
