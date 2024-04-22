@@ -18,7 +18,7 @@ formats_dict = {
     'bsr': "Block Compressed Row Storage",
     'lil': "List of Lists",
     'dok': "Dictionary of Keys",
-    'all': "All of the above"
+    'all': "All formats mentioned above"
 }
 
 modes_dict = {
@@ -29,9 +29,9 @@ modes_dict = {
     'sm': " Scalar multiplication",
     'mvm': "Sparse matrix-vector multiplication",
     'mmm': "Sparse matrix-matrix multiplication",
-    "tps": "Transposition",
-    "inv": "Inversion (if possible)",
-    "full": "Run all above-mentioned functions"
+    'tps': "Transposition",
+    'inv': "Inversion (if possible)",
+    'full': "Run all above-mentioned functions"
 }
 
 format_options = list(formats_dict.keys())
@@ -42,7 +42,6 @@ parser = argparse.ArgumentParser(description="sparse matrix benchmarking script"
 
 class FormatHelpAction(argparse.Action):
     def __call__(self, prs, namespace, values, option_string=None):
-        # print("Possible formats used for testing:")
         print("usage: %s [...] --format %s [...]" % (sys.argv[0], "{" + ",".join(format_options) + "}"))
         print("\noptions:")
         for key, value in formats_dict.items():
@@ -65,7 +64,8 @@ help_group.add_argument('--format_help', help="show additional information about
 help_group.add_argument('--mode_help', help="show additional information about the possible modes and exit",
                         action=ModeHelpAction, nargs=0)
 
-parser.add_argument('-b', '--benchmark', type=int, help="select the number of times to benchmark the chosen mode (default = 0, disables benchmark and runs the chosen function once)")
+parser.add_argument('-b', '--benchmark', type=int, default=0,
+                    help="select the number of times to benchmark the chosen mode (default = 0, disables benchmark and runs the chosen function once)")
 parser.add_argument('--format', choices=format_options, help="choose sparse matrix format to use (Required)",
                     required=True)
 parser.add_argument('--mode', choices=mode_options, help="choose the function to execute (Required)", required=True)
@@ -73,21 +73,23 @@ parser.add_argument('--path_a', help="path to the main matrix to be used for the
                     required=True)
 parser.add_argument('--path_b',
                     help="path to the secondary matrix to be used for the chosen function (Required for modes add, sub and mmm)")
-parser.add_argument('--scalar', help="scalar value used for the chosen function (Required for mode sm)")
-parser.add_argument('--index',
-                    help="index of the row/column in the matrix to select for splicing or as vector (Optional for modes spr, spc and mvm)",
-                    type=int)
+parser.add_argument('--scalar', type=int, help="scalar value used for the chosen function (Required for mode sm)")
+parser.add_argument('--index', type=int,
+                    help="index of the row/column in the matrix to select for splicing or as vector (Optional for modes spr, spc and mvm)")
 
 args = parser.parse_args()
 
 if args.benchmark < 0:
     parser.error("value for --benchmark must be greater than or equal to 0")
 elif args.benchmark == 0 and args.format == "all":
-    parser.error("format 'all' only for benchmarking; to use, set --benchmark to greater than 0")
+    parser.error(
+        "format '%s' only for benchmarking; to use, set --benchmark to greater than 0 or select different mode" % args.format)
+
+# TODO: turn part below into a function so that with all it can be called manually
 
 matrix_a = load_mm_file(args.path_a, args.format)
 if matrix_a is None:
-    parser.exit() # TODO: catch exceptions here and everywhere else
+    parser.exit()  # TODO: catch exceptions here and everywhere else
 
 if args.mode == "add" or args.mode == "sub" or args.mode == "mmm":
     if args.path_b is None:
@@ -120,9 +122,29 @@ elif args.mode == "full":
     else:
         row_index = args.index
 
-if args.benchmark:
-    print("benchmarking")
-    # TODO: handle calling benchmarking function with depending on mode
+if args.benchmark > 0:
+    print("benchmarking...")
+    result = {}
+    if args.mode == "spr":
+        result = benchmark(mtx_splice_row, matrix_a, row_index, reps=args.benchmark)
+    elif args.mode == "spc":
+        result = benchmark(mtx_splice_column, matrix_a, column_index, reps=args.benchmark)
+    elif args.mode == "add":
+        result = benchmark(mtx_addition, matrix_a, matrix_b, reps=args.benchmark)
+    elif args.mode == "sub":
+        result = benchmark(mtx_subtraction, matrix_a, matrix_b, reps=args.benchmark)
+    elif args.mode == "sm":
+        result = benchmark(mtx_scalar_multiplication, args.scalar, matrix_a, reps=args.benchmark)
+    elif args.mode == "mvm":
+        sp_vector = mtx_splice_row(matrix_a, row_index)
+        result = benchmark(mtx_matrix_vector_multiplication, matrix_a, sp_vector, reps=args.benchmark)
+    elif args.mode == "mmm":
+        result = benchmark(mtx_matrix_matrix_multiplication, matrix_a, matrix_b, reps=args.benchmark)
+    elif args.mode == "tps":
+        result = benchmark(mtx_transposition, matrix_a, reps=args.benchmark)
+    elif args.mode == "inv":
+        result = benchmark(mtx_inversion, matrix_a, reps=args.benchmark)
+    # elif args.mode == "full":
 else:
     result = 0
     if args.mode == "spr":
@@ -135,14 +157,14 @@ else:
         result = mtx_subtraction(matrix_a, matrix_b)
     elif args.mode == "sm":
         result = mtx_scalar_multiplication(args.scalar, matrix_a)
-    elif args.mode == "mvm":
+    elif args.mode == "mvm":  # TODO: Test whether different size matrices/vectors work
         sp_vector = mtx_splice_row(matrix_a, row_index)
         result = mtx_matrix_vector_multiplication(matrix_a, sp_vector)
-    elif args.mode == "mmm":
+    elif args.mode == "mmm":  # TODO: Test whether different size matrices/vectors work
         result = mtx_matrix_matrix_multiplication(matrix_a, matrix_b)
     elif args.mode == "tps":
         result = mtx_transposition(matrix_a)
-    elif args.mode == "inv":
+    elif args.mode == "inv":  # TODO: maybe remove this operation from tests, since it only supports CSC and CSR
         result = mtx_inversion(matrix_a)
 
     print(result)
