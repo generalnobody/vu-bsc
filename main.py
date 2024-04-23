@@ -87,8 +87,6 @@ elif args.benchmark == 0 and args.format == "all":
     parser.error(
         "format '%s' only for benchmarking; to use, set --benchmark to greater than 0 or select different mode" % args.format)
 
-# TODO: turn part below into a function so that with all it can be called manually
-
 matrix_a = load_mm_file(args.path_a, args.format)
 if matrix_a is None:
     parser.exit()  # TODO: catch exceptions here and everywhere else
