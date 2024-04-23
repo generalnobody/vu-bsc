@@ -1,7 +1,6 @@
 # Handles outputting results to files
 
 from scipy.io import mmwrite
-from scipy.sparse import *
 
 
 def write_mm_file(filepath, data):

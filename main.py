@@ -98,6 +98,8 @@ if args.mode == "add" or args.mode == "sub" or args.mode == "mmm":
         parser.error("option '%s' required for mode '%s'" % ("--path_b", args.mode))
     else:
         matrix_b = load_mm_file(args.path_b, args.format)
+        if matrix_b is None:
+            parser.exit()
 elif args.mode == "sm" and args.scalar is None:
     parser.error("option '%s' required for mode '%s'" % ("--scalar", args.mode))
 elif args.mode == "spc":
@@ -124,29 +126,47 @@ elif args.mode == "full":
     else:
         row_index = args.index
 
+
+def perform_benchmark(mode, mtx_a, mtx_b=None, idx=-1, scl=-1, reps=0):
+    if mode == "spr":
+        return benchmark(mtx_splice_row, mtx_a, idx, reps=reps)
+    elif mode == "spc":
+        return benchmark(mtx_splice_column, mtx_a, idx, reps=reps)
+    elif mode == "add":
+        return benchmark(mtx_addition, mtx_a, mtx_b, reps=reps)
+    elif mode == "sub":
+        return benchmark(mtx_subtraction, mtx_a, mtx_b, reps=reps)
+    elif mode == "sm":
+        return benchmark(mtx_scalar_multiplication, scl, mtx_a, reps=reps)
+    elif mode == "mvm":
+        sp_vector = mtx_splice_row(mtx_a, idx)
+        return benchmark(mtx_matrix_vector_multiplication, mtx_a, sp_vector, reps=reps)
+    elif mode == "mmm":
+        return benchmark(mtx_matrix_matrix_multiplication, mtx_a, mtx_b, reps=reps)
+    elif mode == "tps":
+        return benchmark(mtx_transposition, mtx_a, reps=reps)
+    elif mode == "inv":
+        return benchmark(mtx_inversion, mtx_a, reps=reps)
+
+
 if args.benchmark > 0:
     print("benchmarking...")
-    result = {}
-    if args.mode == "spr":
-        result = benchmark(mtx_splice_row, matrix_a, row_index, reps=args.benchmark)
-    elif args.mode == "spc":
-        result = benchmark(mtx_splice_column, matrix_a, column_index, reps=args.benchmark)
-    elif args.mode == "add":
-        result = benchmark(mtx_addition, matrix_a, matrix_b, reps=args.benchmark)
-    elif args.mode == "sub":
-        result = benchmark(mtx_subtraction, matrix_a, matrix_b, reps=args.benchmark)
-    elif args.mode == "sm":
-        result = benchmark(mtx_scalar_multiplication, args.scalar, matrix_a, reps=args.benchmark)
-    elif args.mode == "mvm":
-        sp_vector = mtx_splice_row(matrix_a, row_index)
-        result = benchmark(mtx_matrix_vector_multiplication, matrix_a, sp_vector, reps=args.benchmark)
-    elif args.mode == "mmm":
-        result = benchmark(mtx_matrix_matrix_multiplication, matrix_a, matrix_b, reps=args.benchmark)
-    elif args.mode == "tps":
-        result = benchmark(mtx_transposition, matrix_a, reps=args.benchmark)
-    elif args.mode == "inv":
-        result = benchmark(mtx_inversion, matrix_a, reps=args.benchmark)
-    # elif args.mode == "full":
+    result = []
+    if args.mode == "full":
+        for mode in mode_options[:-1]:
+            idx = -1
+            if mode == "spc":
+                idx = column_index
+            elif mode == "spr" or args.mode == "mvm":
+                idx = row_index
+            result.append(perform_benchmark(mode, matrix_a, mtx_b=matrix_b, idx=idx, scl=args.scalar, reps=args.benchmark))
+    else:
+        idx = -1
+        if args.mode == "spc":
+            idx = column_index
+        elif args.mode == "spr" or args.mode == "mvm":
+            idx = row_index
+        result = perform_benchmark(args.mode, matrix_a, mtx_b=matrix_b, idx=idx, scl=args.scalar, reps=args.benchmark)
 else:
     result = 0
     if args.mode == "spr":
