@@ -31,7 +31,7 @@ modes_dict = {
     'mvm': "Sparse matrix-vector multiplication",
     'mmm': "Sparse matrix-matrix multiplication",
     'tps': "Transposition",
-    'inv': "Inversion (if possible)",
+    # 'inv': "Inversion (if possible)",
     'full': "Run all above-mentioned functions"
 }
 
@@ -143,8 +143,8 @@ def perform_benchmark(mode, mtx_a, mtx_b=None, idx=-1, scl=-1, reps=0):
         return benchmark(mtx_matrix_matrix_multiplication, mtx_a, mtx_b, reps=reps)
     elif mode == "tps":
         return benchmark(mtx_transposition, mtx_a, reps=reps)
-    elif mode == "inv":
-        return benchmark(mtx_inversion, mtx_a, reps=reps)
+    # elif mode == "inv":
+    #     return benchmark(mtx_inversion, mtx_a, reps=reps)
 
 
 if args.benchmark > 0:
@@ -184,8 +184,8 @@ else:
         result = mtx_matrix_matrix_multiplication(matrix_a, matrix_b)
     elif args.mode == "tps":
         result = mtx_transposition(matrix_a)
-    elif args.mode == "inv":  # TODO: maybe remove this operation from tests, since it only supports CSC and CSR
-        result = mtx_inversion(matrix_a)
+    # elif args.mode == "inv":  # Removed for now, since it only supports CSR and CSC formats
+    #     result = mtx_inversion(matrix_a)
 
     if args.out is None:
         print(result)
