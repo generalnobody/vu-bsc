@@ -1,48 +1,13 @@
-# Entry point of the project. Responsible for loading matrix files and combining all other functions into a single workflow\
-# TODO: possibly turn most code in this file into a callable function, so that when using 'all' it can be called for each format separately.
-# TODO: improve benchmarking and results showing to make the title more accurate
-# TODO: also, figure out a way to nicely test memory usage of sparse matrices
-# TODO: output results as JSON to either stdout or output file, then load them with results either run separately or by calling function from results
+# Main script that handles everything surrounding the benchmarking functionality
 
 import argparse
 import sys
+import json
 
 from loader import load_mm_file
 from functions import *
 from results import *
 from benchmark import *
-from output import *
-
-# global matrix_b, sp_vector, row_index, column_index
-
-formats_dict = {
-    'coo': "Coordinate List",
-    'csr': "Compressed Sparse Row",
-    'csc': "Compressed Sparse Column",
-    'dia': "Diagonal Storage",
-    'bsr': "Block Compressed Row Storage",
-    'lil': "List of Lists",
-    'dok': "Dictionary of Keys",
-    'all': "All formats mentioned above" # TODO: implement support for this
-}
-
-modes_dict = {
-    'spr': "Row splicing",
-    'spc': "Column splicing",
-    'add': "Matrix addition",
-    'sub': "Matrix subtraction",
-    'sm': " Scalar multiplication",
-    'mvm': "Sparse matrix-vector multiplication",
-    'mmm': "Sparse matrix-matrix multiplication",
-    'tps': "Transposition",
-    # 'inv': "Inversion (if possible)",
-    'full': "Run all above-mentioned functions"
-}
-
-format_options = list(formats_dict.keys())
-mode_options = list(modes_dict.keys())
-
-parser = argparse.ArgumentParser(description="sparse matrix benchmarking script")
 
 
 class FormatHelpAction(argparse.Action):
@@ -64,58 +29,34 @@ class ModeHelpAction(argparse.Action):
 
 
 def perform_benchmark(mode, mtx_a, mtx_b=None, idx=-1, scl=-1, reps=0):
+    benchmark_results = {'mode': mode}
     if mode == "spr":
-        return benchmark(mtx_splice_row, mtx_a, idx, reps=reps)
+        benchmark_results['time'] = benchmark(mtx_splice_row, mtx_a, idx, reps=reps)
     elif mode == "spc":
-        return benchmark(mtx_splice_column, mtx_a, idx, reps=reps)
+        benchmark_results['time'] = benchmark(mtx_splice_column, mtx_a, idx, reps=reps)
     elif mode == "add":
-        return benchmark(mtx_addition, mtx_a, mtx_b, reps=reps)
+        benchmark_results['time'] = benchmark(mtx_addition, mtx_a, mtx_b, reps=reps)
     elif mode == "sub":
-        return benchmark(mtx_subtraction, mtx_a, mtx_b, reps=reps)
+        benchmark_results['time'] = benchmark(mtx_subtraction, mtx_a, mtx_b, reps=reps)
     elif mode == "sm":
-        return benchmark(mtx_scalar_multiplication, scl, mtx_a, reps=reps)
+        benchmark_results['time'] = benchmark(mtx_scalar_multiplication, scl, mtx_a, reps=reps)
     elif mode == "mvm":
         spliced_vector = mtx_splice_row(mtx_a, idx)
-        return benchmark(mtx_matrix_vector_multiplication, mtx_a, spliced_vector, reps=reps)
+        benchmark_results['time'] = benchmark(mtx_matrix_vector_multiplication, mtx_a, spliced_vector, reps=reps)
     elif mode == "mmm":
-        return benchmark(mtx_matrix_matrix_multiplication, mtx_a, mtx_b, reps=reps)
+        benchmark_results['time'] = benchmark(mtx_matrix_matrix_multiplication, mtx_a, mtx_b, reps=reps)
     elif mode == "tps":
-        return benchmark(mtx_transposition, mtx_a, reps=reps)
+        benchmark_results['time'] = benchmark(mtx_transposition, mtx_a, reps=reps)
     # elif mode == "inv":  # Removed for now, since it only supports CSR and CSC formats
-    #     return benchmark(mtx_inversion, mtx_a, reps=reps)
+    #     benchmark_results['time'] = benchmark(mtx_inversion, mtx_a, reps=reps)
 
+    return benchmark_results
 
-help_group = parser.add_argument_group('additional help')
-help_group.add_argument('--format_help', help="show additional information about the possible formats and exit",
-                        action=FormatHelpAction, nargs=0)
-help_group.add_argument('--mode_help', help="show additional information about the possible modes and exit",
-                        action=ModeHelpAction, nargs=0)
-
-parser.add_argument('-b', '--benchmark', type=int, default=0,
-                    help="select the number of times to benchmark the chosen mode (default = 0, disables benchmark and runs the chosen function once)")
-parser.add_argument('--format', choices=format_options, help="choose sparse matrix format to use (Required)",
-                    required=True)
-parser.add_argument('--mode', choices=mode_options, help="choose the function to execute (Required)", required=True)
-parser.add_argument('--path_a', help="path to the main matrix to be used for the chosen function (Required)",
-                    required=True)
-parser.add_argument('--path_b',
-                    help="path to the secondary matrix to be used for the chosen function (Required for modes add, sub and mmm)")
-parser.add_argument('--scalar', type=int, help="scalar value used for the chosen function (Required for mode sm)")
-parser.add_argument('--index', type=int,
-                    help="index of the row/column in the matrix to select for splicing or as vector (Optional for modes spr, spc and mvm)")
-parser.add_argument('-o', '--out', help="path to save the result to, otherwise it gets printed to stdout")
-
-args = parser.parse_args()
-
-if args.benchmark < 0:
-    parser.error("value for --benchmark must be greater than or equal to 0")
-elif args.benchmark == 0 and args.format == "all":
-    parser.error(
-        "format '%s' only for benchmarking; to use, set --benchmark to greater than 0 or select different mode" % args.format)
 
 def run_format(args):
     matrix_b = None
-    column_index, row_index = -1
+    column_index =0
+    row_index = 0
     matrix_a = load_mm_file(args.path_a, args.format)
     if matrix_a is None:
         parser.exit()  # TODO: catch exceptions here and everywhere else
@@ -127,7 +68,7 @@ def run_format(args):
             matrix_b = load_mm_file(args.path_b, args.format)
             if matrix_b is None:
                 parser.exit()
-    if args.mode == "sm" and args.scalar is None or args.mode == "full":
+    if (args.mode == "sm" or args.mode == "full") and args.scalar is None:
         parser.error("option '%s' required for mode '%s'" % ("--scalar", args.mode))
     if args.mode == "spc":
         num_columns = matrix_a.shape[1]
@@ -142,59 +83,108 @@ def run_format(args):
         else:
             row_index = args.index
 
-    if args.benchmark > 0:
-        print("benchmarking...")
-        result = []
-        if args.mode == "full":
-            for mode in mode_options[:-1]:
-                idx = -1
-                if mode == "spc":
-                    idx = column_index
-                elif mode == "spr" or args.mode == "mvm":
-                    idx = row_index
-                result.append(
-                    perform_benchmark(mode, matrix_a, mtx_b=matrix_b, idx=idx, scl=args.scalar, reps=args.benchmark))
-            plot_full_results(mode_options[:-1], result, args.benchmark)
-        else:
+    fmt_results = {'format': args.format, 'results': []}
+
+    if args.mode == "full":
+        for mode in mode_options[:-1]:
             idx = -1
-            if args.mode == "spc":
+            if mode == "spc":
                 idx = column_index
-            elif args.mode == "spr" or args.mode == "mvm":
+            elif mode == "spr" or args.mode == "mvm":
                 idx = row_index
-            result = perform_benchmark(args.mode, matrix_a, mtx_b=matrix_b, idx=idx, scl=args.scalar,
-                                       reps=args.benchmark)
-            plot_results(result, args.benchmark)
+            fmt_results['results'].append(
+                perform_benchmark(mode, matrix_a, mtx_b=matrix_b, idx=idx, scl=args.scalar, reps=args.benchmark)
+            )
     else:
-        result = 0
-        if args.mode == "spr":
-            result = mtx_splice_row(matrix_a, row_index)
-        elif args.mode == "spc":
-            result = mtx_splice_column(matrix_a, column_index)
-        elif args.mode == "add":
-            result = mtx_addition(matrix_a, matrix_b)
-        elif args.mode == "sub":
-            result = mtx_subtraction(matrix_a, matrix_b)
-        elif args.mode == "sm":
-            result = mtx_scalar_multiplication(args.scalar, matrix_a)
-        elif args.mode == "mvm":  # TODO: Test whether different size matrices/vectors work
-            sp_vector = mtx_splice_row(matrix_a, row_index)
-            result = mtx_matrix_vector_multiplication(matrix_a, sp_vector)
-        elif args.mode == "mmm":  # TODO: Test whether different size matrices/vectors work
-            result = mtx_matrix_matrix_multiplication(matrix_a, matrix_b)
-        elif args.mode == "tps":
-            result = mtx_transposition(matrix_a)
-        # elif args.mode == "inv":  # Removed for now, since it only supports CSR and CSC formats
-        #     result = mtx_inversion(matrix_a)
+        idx = -1
+        if args.mode == "spc":
+            idx = column_index
+        elif args.mode == "spr" or args.mode == "mvm":
+            idx = row_index
+        fmt_results['results'].append(
+            perform_benchmark(args.mode, matrix_a, mtx_b=matrix_b, idx=idx, scl=args.scalar, reps=args.benchmark)
+        )
 
-        if args.out is None:
-            print(result)
-        else:
-            write_mm_file(args.out, result)
+    return fmt_results
 
-if args.format == "all":
-    for fmt in format_options[:-1]:
-        args.format = fmt
-        run_format(args)
+
+formats_dict = {
+    'coo': "Coordinate List",
+    'csr': "Compressed Sparse Row",
+    'csc': "Compressed Sparse Column",
+    'dia': "Diagonal Storage",
+    'bsr': "Block Compressed Row Storage",
+    'lil': "List of Lists",
+    'dok': "Dictionary of Keys",
+    'all': "All formats mentioned above"  # TODO: implement support for this
+}
+
+modes_dict = {
+    'spr': "Row splicing",
+    'spc': "Column splicing",
+    'add': "Matrix addition",
+    'sub': "Matrix subtraction",
+    'sm': " Scalar multiplication",
+    'mvm': "Sparse matrix-vector multiplication",
+    'mmm': "Sparse matrix-matrix multiplication",
+    'tps': "Transposition",
+    # 'inv': "Inversion (if possible)",
+    'full': "Run all above-mentioned functions"
+}
+
+format_options = list(formats_dict.keys())
+mode_options = list(modes_dict.keys())
+
+parser = argparse.ArgumentParser(description="sparse matrix benchmarking script")
+
+help_group = parser.add_argument_group('additional help')
+help_group.add_argument('--format_help', help="show additional information about the possible formats and exit",
+                        action=FormatHelpAction, nargs=0)
+help_group.add_argument('--mode_help', help="show additional information about the possible modes and exit",
+                        action=ModeHelpAction, nargs=0)
+
+parser.add_argument('-b', '--benchmark', type=int, required=True,
+                    help="select the number of times to benchmark the chosen mode (minimum 1)")
+parser.add_argument('--format', choices=format_options, help="choose sparse matrix format to use (Required)",
+                    required=True)
+parser.add_argument('--mode', choices=mode_options, help="choose the function to execute (Required)", required=True)
+parser.add_argument('--path_a', help="path to the main matrix to be used for the chosen function (Required)",
+                    required=True)
+parser.add_argument('--path_b',
+                    help="path to the secondary matrix to be used for the chosen function (Required for modes add, sub and mmm)")
+parser.add_argument('--scalar', type=int, help="scalar value used for the chosen function (Required for mode sm)")
+parser.add_argument('--index', type=int,
+                    help="index of the row/column in the matrix to select for splicing or as vector (Optional for modes spr, spc and mvm)")
+parser.add_argument('-o', '--out', help="path to save the result to, otherwise it gets printed to stdout (JSON format)")
+# parser.add_argument('-t', '--threads', help="number of threads to use when running the code (default = 1) (currently not implemented)")
+
+parser_args = parser.parse_args()
+
+if parser_args.benchmark < 1:
+    parser.error("value for --benchmark must at least 1")
+
+results = {}
+if parser_args.format == "all":
+    results['all-formats'] = True
 else:
-    run_format(args)
+    results['all-formats'] = False
 
+if parser_args.mode == "full":
+    results['all-modes'] = True
+else:
+    results['all-modes'] = False
+
+results['data'] = []
+
+if parser_args.format == "all":
+    for fmt in format_options[:-1]:
+        parser_args.format = fmt
+        results['data'].append(run_format(parser_args))
+else:
+    results['data'].append(run_format(parser_args))
+
+if parser_args.out is None:
+    print(json.dumps(results, indent=4))
+else:
+    with open(parser_args.out, "w") as write_file:
+        json.dump(results, write_file, indent=4)

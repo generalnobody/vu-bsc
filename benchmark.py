@@ -6,6 +6,7 @@ def benchmark(func, *args, reps=0):
     if reps <= 0:
         print("error: wrong benchmark reps value")
         return None
+
     result = []
     for _ in range(reps):
         t1 = time.time()
