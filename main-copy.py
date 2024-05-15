@@ -2,7 +2,6 @@
 # TODO: possibly turn most code in this file into a callable function, so that when using 'all' it can be called for each format separately.
 # TODO: improve benchmarking and results showing to make the title more accurate
 # TODO: also, figure out a way to nicely test memory usage of sparse matrices
-# TODO: output results as JSON to either stdout or output file, then load them with results either run separately or by calling function from results
 
 import argparse
 import sys
@@ -13,7 +12,7 @@ from results import *
 from benchmark import *
 from output import *
 
-# global matrix_b, sp_vector, row_index, column_index
+global matrix_b, sp_vector, row_index, column_index
 
 formats_dict = {
     'coo': "Coordinate List",
@@ -75,8 +74,8 @@ def perform_benchmark(mode, mtx_a, mtx_b=None, idx=-1, scl=-1, reps=0):
     elif mode == "sm":
         return benchmark(mtx_scalar_multiplication, scl, mtx_a, reps=reps)
     elif mode == "mvm":
-        spliced_vector = mtx_splice_row(mtx_a, idx)
-        return benchmark(mtx_matrix_vector_multiplication, mtx_a, spliced_vector, reps=reps)
+        sp_vector = mtx_splice_row(mtx_a, idx)
+        return benchmark(mtx_matrix_vector_multiplication, mtx_a, sp_vector, reps=reps)
     elif mode == "mmm":
         return benchmark(mtx_matrix_matrix_multiplication, mtx_a, mtx_b, reps=reps)
     elif mode == "tps":
@@ -113,88 +112,86 @@ elif args.benchmark == 0 and args.format == "all":
     parser.error(
         "format '%s' only for benchmarking; to use, set --benchmark to greater than 0 or select different mode" % args.format)
 
-def run_format(args):
-    matrix_b = None
-    column_index, row_index = -1
-    matrix_a = load_mm_file(args.path_a, args.format)
-    if matrix_a is None:
-        parser.exit()  # TODO: catch exceptions here and everywhere else
+matrix_a = load_mm_file(args.path_a, args.format)
+if matrix_a is None:
+    parser.exit()  # TODO: catch exceptions here and everywhere else
 
-    if args.mode == "add" or args.mode == "sub" or args.mode == "mmm" or args.mode == "full":
-        if args.path_b is None:
-            parser.error("option '%s' required for mode '%s'" % ("--path_b", args.mode))
-        else:
-            matrix_b = load_mm_file(args.path_b, args.format)
-            if matrix_b is None:
-                parser.exit()
-    if args.mode == "sm" and args.scalar is None or args.mode == "full":
-        parser.error("option '%s' required for mode '%s'" % ("--scalar", args.mode))
-    if args.mode == "spc":
-        num_columns = matrix_a.shape[1]
-        if args.index is None:
-            column_index = np.random.randint(num_columns)
-        else:
-            column_index = args.index
-    if args.mode == "spr" or args.mode == "mvm" or args.mode == "full":
-        num_rows = matrix_a.shape[0]
-        if args.index is None:
-            row_index = np.random.randint(num_rows)
-        else:
-            row_index = args.index
-
-    if args.benchmark > 0:
-        print("benchmarking...")
-        result = []
-        if args.mode == "full":
-            for mode in mode_options[:-1]:
-                idx = -1
-                if mode == "spc":
-                    idx = column_index
-                elif mode == "spr" or args.mode == "mvm":
-                    idx = row_index
-                result.append(
-                    perform_benchmark(mode, matrix_a, mtx_b=matrix_b, idx=idx, scl=args.scalar, reps=args.benchmark))
-            plot_full_results(mode_options[:-1], result, args.benchmark)
-        else:
-            idx = -1
-            if args.mode == "spc":
-                idx = column_index
-            elif args.mode == "spr" or args.mode == "mvm":
-                idx = row_index
-            result = perform_benchmark(args.mode, matrix_a, mtx_b=matrix_b, idx=idx, scl=args.scalar,
-                                       reps=args.benchmark)
-            plot_results(result, args.benchmark)
+if args.mode == "add" or args.mode == "sub" or args.mode == "mmm":
+    if args.path_b is None:
+        parser.error("option '%s' required for mode '%s'" % ("--path_b", args.mode))
     else:
-        result = 0
-        if args.mode == "spr":
-            result = mtx_splice_row(matrix_a, row_index)
-        elif args.mode == "spc":
-            result = mtx_splice_column(matrix_a, column_index)
-        elif args.mode == "add":
-            result = mtx_addition(matrix_a, matrix_b)
-        elif args.mode == "sub":
-            result = mtx_subtraction(matrix_a, matrix_b)
-        elif args.mode == "sm":
-            result = mtx_scalar_multiplication(args.scalar, matrix_a)
-        elif args.mode == "mvm":  # TODO: Test whether different size matrices/vectors work
-            sp_vector = mtx_splice_row(matrix_a, row_index)
-            result = mtx_matrix_vector_multiplication(matrix_a, sp_vector)
-        elif args.mode == "mmm":  # TODO: Test whether different size matrices/vectors work
-            result = mtx_matrix_matrix_multiplication(matrix_a, matrix_b)
-        elif args.mode == "tps":
-            result = mtx_transposition(matrix_a)
-        # elif args.mode == "inv":  # Removed for now, since it only supports CSR and CSC formats
-        #     result = mtx_inversion(matrix_a)
+        matrix_b = load_mm_file(args.path_b, args.format)
+        if matrix_b is None:
+            parser.exit()
+elif args.mode == "sm" and args.scalar is None:
+    parser.error("option '%s' required for mode '%s'" % ("--scalar", args.mode))
+elif args.mode == "spc":
+    num_columns = matrix_a.shape[1]
+    if args.index is None:
+        column_index = np.random.randint(num_columns)
+    else:
+        column_index = args.index
+elif args.mode == "spr" or args.mode == "mvm":
+    num_rows = matrix_a.shape[0]
+    if args.index is None:
+        row_index = np.random.randint(num_rows)
+    else:
+        row_index = args.index
+elif args.mode == "full":
+    if args.path_b is None:
+        parser.error("option '%s' required for mode '%s'" % ("--path_b", args.mode))
+    elif args.scalar is None:
+        parser.error("option '%s' required for mode '%s'" % ("--scalar", args.mode))
 
-        if args.out is None:
-            print(result)
-        else:
-            write_mm_file(args.out, result)
+    num_rows = matrix_a.shape[0]
+    if args.index is None:
+        row_index = np.random.randint(num_rows)
+    else:
+        row_index = args.index
 
-if args.format == "all":
-    for fmt in format_options[:-1]:
-        args.format = fmt
-        run_format(args)
+if args.benchmark > 0:
+    print("benchmarking...")
+    result = []
+    if args.mode == "full":
+        for mode in mode_options[:-1]:
+            idx = -1
+            if mode == "spc":
+                idx = column_index
+            elif mode == "spr" or args.mode == "mvm":
+                idx = row_index
+            result.append(perform_benchmark(mode, matrix_a, mtx_b=matrix_b, idx=idx, scl=args.scalar, reps=args.benchmark))
+        plot_full_results(mode_options[:-1], result, args.benchmark)
+    else:
+        idx = -1
+        if args.mode == "spc":
+            idx = column_index
+        elif args.mode == "spr" or args.mode == "mvm":
+            idx = row_index
+        result = perform_benchmark(args.mode, matrix_a, mtx_b=matrix_b, idx=idx, scl=args.scalar, reps=args.benchmark)
+        plot_results(result, args.benchmark)
 else:
-    run_format(args)
+    result = 0
+    if args.mode == "spr":
+        result = mtx_splice_row(matrix_a, row_index)
+    elif args.mode == "spc":
+        result = mtx_splice_column(matrix_a, column_index)
+    elif args.mode == "add":
+        result = mtx_addition(matrix_a, matrix_b)
+    elif args.mode == "sub":
+        result = mtx_subtraction(matrix_a, matrix_b)
+    elif args.mode == "sm":
+        result = mtx_scalar_multiplication(args.scalar, matrix_a)
+    elif args.mode == "mvm":  # TODO: Test whether different size matrices/vectors work
+        sp_vector = mtx_splice_row(matrix_a, row_index)
+        result = mtx_matrix_vector_multiplication(matrix_a, sp_vector)
+    elif args.mode == "mmm":  # TODO: Test whether different size matrices/vectors work
+        result = mtx_matrix_matrix_multiplication(matrix_a, matrix_b)
+    elif args.mode == "tps":
+        result = mtx_transposition(matrix_a)
+    # elif args.mode == "inv":  # Removed for now, since it only supports CSR and CSC formats
+    #     result = mtx_inversion(matrix_a)
 
+    if args.out is None:
+        print(result)
+    else:
+        write_mm_file(args.out, result)
