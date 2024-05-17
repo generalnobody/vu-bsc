@@ -1,6 +1,7 @@
 # Script responsible for loading the specified sparse matrix into the desired format
 from scipy.io import mmread
 from scipy.sparse import *
+import warnings
 
 
 # Checks if the provided file is a MatrixMarket file
@@ -38,6 +39,8 @@ def load_mm_file(file_path, fmt):
         elif fmt == "csc":
             return csc_matrix(sparse_matrix)
         elif fmt == "dia":
+            # Filter out the SparseEfficiencyWarning
+            warnings.filterwarnings("ignore", category=SparseEfficiencyWarning)
             return dia_matrix(sparse_matrix)
         elif fmt == "bsr":
             return bsr_matrix(sparse_matrix)
