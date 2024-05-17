@@ -1,3 +1,7 @@
 .idea
 __pycache__
-structure.json
+plots
+
+# JSON files whitelist
+*.json
+!dicts.json

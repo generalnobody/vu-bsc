@@ -1,0 +1,23 @@
+{
+  "formats_dict": {
+    "coo": "Coordinate List",
+    "csr": "Compressed Sparse Row",
+    "csc": "Compressed Sparse Column",
+    "dia": "Diagonal Storage",
+    "bsr": "Block Compressed Row Storage",
+    "lil": "List of Lists",
+    "dok" : "Dictionary of Keys",
+    "all": "All formats mentioned above"
+  },
+  "modes_dict": {
+    "spr": "Splice Row",
+    "spc": "Splice Column",
+    "add": "Matrix Addition",
+    "sub": "Matrix subtraction",
+    "sm": "Scalar Multiplication",
+    "mvm": "Sparse matrix-vector multiplication",
+    "mmm": "Sparse matrix-matrix multiplication",
+    "tps": "Transposition",
+    "full": "Run all above-mentioned functions"
+  }
+}

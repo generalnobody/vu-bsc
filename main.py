@@ -6,7 +6,6 @@ import json
 
 from loader import load_mm_file
 from functions import *
-from results import *
 from benchmark import *
 
 
@@ -108,29 +107,12 @@ def run_format(args):
     return fmt_results
 
 
-formats_dict = {
-    'coo': "Coordinate List",
-    'csr': "Compressed Sparse Row",
-    'csc': "Compressed Sparse Column",
-    'dia': "Diagonal Storage",
-    'bsr': "Block Compressed Row Storage",
-    'lil': "List of Lists",
-    'dok': "Dictionary of Keys",
-    'all': "All formats mentioned above"  # TODO: implement support for this
-}
+# Removed inversion, check later if it is actually possible
+with open("./dicts.json", "r") as read_file:
+    dicts = json.load(read_file)
 
-modes_dict = {
-    'spr': "Row splicing",
-    'spc': "Column splicing",
-    'add': "Matrix addition",
-    'sub': "Matrix subtraction",
-    'sm': " Scalar multiplication",
-    'mvm': "Sparse matrix-vector multiplication",
-    'mmm': "Sparse matrix-matrix multiplication",
-    'tps': "Transposition",
-    # 'inv': "Inversion (if possible)",
-    'full': "Run all above-mentioned functions"
-}
+formats_dict = dicts['formats_dict']
+modes_dict = dicts['modes_dict']
 
 format_options = list(formats_dict.keys())
 mode_options = list(modes_dict.keys())
@@ -163,18 +145,7 @@ parser_args = parser.parse_args()
 if parser_args.benchmark < 1:
     parser.error("value for --benchmark must at least 1")
 
-results = {}
-if parser_args.format == "all":
-    results['all-formats'] = True
-else:
-    results['all-formats'] = False
-
-if parser_args.mode == "full":
-    results['all-modes'] = True
-else:
-    results['all-modes'] = False
-
-results['data'] = []
+results = {'data': []}
 
 if parser_args.format == "all":
     for fmt in format_options[:-1]:
