@@ -1,30 +1,15 @@
 import argparse
 import sys
+import json
 
 from loader import load_mm_file
 from functions import *
 
-formats_dict = {
-    'coo': "Coordinate List",
-    'csr': "Compressed Sparse Row",
-    'csc': "Compressed Sparse Column",
-    'dia': "Diagonal Storage",
-    'bsr': "Block Compressed Row Storage",
-    'lil': "List of Lists",
-    'dok': "Dictionary of Keys"
-}
+with open("./dicts.json", "r") as read_file:
+    dicts = json.load(read_file)
 
-modes_dict = {
-    'spr': "Row splicing",
-    'spc': "Column splicing",
-    'add': "Matrix addition",
-    'sub': "Matrix subtraction",
-    'sm': " Scalar multiplication",
-    'mvm': "Sparse matrix-vector multiplication",
-    'mmm': "Sparse matrix-matrix multiplication",
-    'tps': "Transposition",
-    # 'inv': "Inversion (if possible)"
-}
+formats_dict = dicts['formats_dict']
+modes_dict = dicts['modes_dict']
 
 format_options = list(formats_dict.keys())
 mode_options = list(modes_dict.keys())
