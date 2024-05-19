@@ -50,12 +50,12 @@ parser.add_argument('--path_b',
                     help="path to the secondary matrix to be used for the chosen function (Required for modes add, sub and mmm)")
 parser.add_argument('--scalar', type=int, help="scalar value used for the chosen function (Required for mode sm)")
 parser.add_argument('--index', type=int,
-                    help="index of the row/column in the matrix to select for splicing or as vector (Optional for modes spr, spc and mvm)")
+                    help="index of the row/column in the matrix to select for splicing or as vector (Optional for mode mvm)")
 
 args = parser.parse_args()
 
 matrix_b = None
-column_index, row_index = -1
+row_index = -1
 matrix_a = load_mm_file(args.path_a, args.format)
 if matrix_a is None:
     parser.exit()  # TODO: catch exceptions here and everywhere else
@@ -69,13 +69,7 @@ if args.mode == "add" or args.mode == "sub" or args.mode == "mmm":
             parser.exit()
 if args.mode == "sm" and args.scalar is None:
     parser.error("option '%s' required for mode '%s'" % ("--scalar", args.mode))
-if args.mode == "spc":
-    num_columns = matrix_a.shape[1]
-    if args.index is None:
-        column_index = np.random.randint(num_columns)
-    else:
-        column_index = args.index
-if args.mode == "spr" or args.mode == "mvm":
+if args.mode == "mvm":
     num_rows = matrix_a.shape[0]
     if args.index is None:
         row_index = np.random.randint(num_rows)
@@ -83,18 +77,14 @@ if args.mode == "spr" or args.mode == "mvm":
         row_index = args.index
 
 result = None
-if args.mode == "spr":
-    result = mtx_splice_row(matrix_a, row_index)
-elif args.mode == "spc":
-    result = mtx_splice_column(matrix_a, column_index)
-elif args.mode == "add":
+if args.mode == "add":
     result = mtx_addition(matrix_a, matrix_b)
 elif args.mode == "sub":
     result = mtx_subtraction(matrix_a, matrix_b)
 elif args.mode == "sm":
     result = mtx_scalar_multiplication(args.scalar, matrix_a)
 elif args.mode == "mvm":  # TODO: Test whether different size matrices/vectors work
-    sp_vector = mtx_splice_row(matrix_a, row_index)
+    sp_vector = matrix_a.getrow(row_index)
     result = mtx_matrix_vector_multiplication(matrix_a, sp_vector)
 elif args.mode == "mmm":  # TODO: Test whether different size matrices/vectors work
     result = mtx_matrix_matrix_multiplication(matrix_a, matrix_b)

@@ -2,13 +2,13 @@
 from scipy.sparse.linalg import inv
 import numpy as np
 
-
-def mtx_splice_row(mtx, row_index):
-    return mtx.getrow(row_index)
-
-
-def mtx_splice_column(mtx, column_index):
-    return mtx.getcol(column_index)
+# Removed splicing operations. getrow() and getcol() are not correct methods of splicing, and certain matrix formats do not support real splicing using [:,i] for example
+# def mtx_splice_row(mtx, row_index):
+#     return mtx.getrow(row_index)
+#
+#
+# def mtx_splice_column(mtx, column_index):
+#     return mtx.getcol(column_index)
 
 
 def mtx_addition(mtx_a, mtx_b):

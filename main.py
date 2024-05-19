@@ -29,19 +29,19 @@ class ModeHelpAction(argparse.Action):
 
 def perform_benchmark(mode, mtx_a, mtx_b=None, idx=-1, scl=-1, reps=0):
     benchmark_results = {'mode': mode}
-    if mode == "spr":
-        benchmark_results['time'] = benchmark(mtx_splice_row, mtx_a, idx, reps=reps)
-    elif mode == "spc":
-        benchmark_results['time'] = benchmark(mtx_splice_column, mtx_a, idx, reps=reps)
-    elif mode == "add":
+    # if mode == "spr":
+    #     benchmark_results['time'] = benchmark(mtx_splice_row, mtx_a, idx, reps=reps)
+    # elif mode == "spc":
+    #     benchmark_results['time'] = benchmark(mtx_splice_column, mtx_a, idx, reps=reps)
+    if mode == "add":
         benchmark_results['time'] = benchmark(mtx_addition, mtx_a, mtx_b, reps=reps)
     elif mode == "sub":
         benchmark_results['time'] = benchmark(mtx_subtraction, mtx_a, mtx_b, reps=reps)
     elif mode == "sm":
         benchmark_results['time'] = benchmark(mtx_scalar_multiplication, scl, mtx_a, reps=reps)
     elif mode == "mvm":
-        spliced_vector = mtx_splice_row(mtx_a, idx)
-        benchmark_results['time'] = benchmark(mtx_matrix_vector_multiplication, mtx_a, spliced_vector, reps=reps)
+        vec = mtx_a.getrow(idx)
+        benchmark_results['time'] = benchmark(mtx_matrix_vector_multiplication, mtx_a, vec, reps=reps)
     elif mode == "mmm":
         benchmark_results['time'] = benchmark(mtx_matrix_matrix_multiplication, mtx_a, mtx_b, reps=reps)
     elif mode == "tps":
@@ -54,7 +54,6 @@ def perform_benchmark(mode, mtx_a, mtx_b=None, idx=-1, scl=-1, reps=0):
 
 def run_format(args):
     matrix_b = None
-    column_index =0
     row_index = 0
     matrix_a = load_mm_file(args.path_a, args.format)
     if matrix_a is None:
@@ -69,13 +68,7 @@ def run_format(args):
                 parser.exit()
     if (args.mode == "sm" or args.mode == "full") and args.scalar is None:
         parser.error("option '%s' required for mode '%s'" % ("--scalar", args.mode))
-    if args.mode == "spc":
-        num_columns = matrix_a.shape[1]
-        if args.index is None:
-            column_index = np.random.randint(num_columns)
-        else:
-            column_index = args.index
-    if args.mode == "spr" or args.mode == "mvm" or args.mode == "full":
+    if args.mode == "mvm" or args.mode == "full":
         num_rows = matrix_a.shape[0]
         if args.index is None:
             row_index = np.random.randint(num_rows)
@@ -86,22 +79,12 @@ def run_format(args):
 
     if args.mode == "full":
         for mode in mode_options[:-1]:
-            idx = -1
-            if mode == "spc":
-                idx = column_index
-            elif mode == "spr" or args.mode == "mvm":
-                idx = row_index
             fmt_results['results'].append(
-                perform_benchmark(mode, matrix_a, mtx_b=matrix_b, idx=idx, scl=args.scalar, reps=args.benchmark)
+                perform_benchmark(mode, matrix_a, mtx_b=matrix_b, idx=row_index, scl=args.scalar, reps=args.benchmark)
             )
     else:
-        idx = -1
-        if args.mode == "spc":
-            idx = column_index
-        elif args.mode == "spr" or args.mode == "mvm":
-            idx = row_index
         fmt_results['results'].append(
-            perform_benchmark(args.mode, matrix_a, mtx_b=matrix_b, idx=idx, scl=args.scalar, reps=args.benchmark)
+            perform_benchmark(args.mode, matrix_a, mtx_b=matrix_b, idx=row_index, scl=args.scalar, reps=args.benchmark)
         )
 
     return fmt_results
@@ -136,7 +119,7 @@ parser.add_argument('--path_b',
                     help="path to the secondary matrix to be used for the chosen function (Required for modes add, sub and mmm)")
 parser.add_argument('--scalar', type=int, help="scalar value used for the chosen function (Required for mode sm)")
 parser.add_argument('--index', type=int,
-                    help="index of the row/column in the matrix to select for splicing or as vector (Optional for modes spr, spc and mvm)")
+                    help="index of the row in the matrix to select as vector (Optional for mode mvm)")
 parser.add_argument('-o', '--out', help="path to save the result to, otherwise it gets printed to stdout (JSON format)")
 # parser.add_argument('-t', '--threads', help="number of threads to use when running the code (default = 1) (currently not implemented)")
 

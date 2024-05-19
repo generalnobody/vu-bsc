@@ -10,8 +10,6 @@
     "all": "All formats mentioned above"
   },
   "modes_dict": {
-    "spr": "Splice Row",
-    "spc": "Splice Column",
     "add": "Matrix Addition",
     "sub": "Matrix subtraction",
     "sm": "Scalar Multiplication",
