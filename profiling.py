@@ -1,6 +1,7 @@
 import argparse
 import sys
 import json
+import cProfile
 
 from loader import load_mm_file
 from functions import *
@@ -76,20 +77,36 @@ if args.mode == "mvm":
     else:
         row_index = args.index
 
+profiler = cProfile.Profile()
+
 result = None
 if args.mode == "add":
+    profiler.enable()
     result = mtx_addition(matrix_a, matrix_b)
+    profiler.disable()
 elif args.mode == "sub":
+    profiler.enable()
     result = mtx_subtraction(matrix_a, matrix_b)
+    profiler.disable()
 elif args.mode == "sm":
+    profiler.enable()
     result = mtx_scalar_multiplication(args.scalar, matrix_a)
+    profiler.disable()
 elif args.mode == "mvm":  # TODO: Test whether different size matrices/vectors work
     sp_vector = matrix_a.getrow(row_index)
+    profiler.enable()
     result = mtx_matrix_vector_multiplication(matrix_a, sp_vector)
+    profiler.disable()
 elif args.mode == "mmm":  # TODO: Test whether different size matrices/vectors work
+    profiler.enable()
     result = mtx_matrix_matrix_multiplication(matrix_a, matrix_b)
+    profiler.disable()
 elif args.mode == "tps":
+    profiler.enable()
     result = mtx_transposition(matrix_a)
+    profiler.disable()
 
 if result is not None:
     print(result)
+
+profiler.print_stats()
