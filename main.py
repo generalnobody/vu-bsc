@@ -109,17 +109,17 @@ help_group.add_argument('--mode_help', help="show additional information about t
                         action=ModeHelpAction, nargs=0)
 
 parser.add_argument('-b', '--benchmark', type=int, required=True,
-                    help="select the number of times to benchmark the chosen mode (minimum 1)")
-parser.add_argument('--format', choices=format_options, help="choose sparse matrix format to use (Required)",
+                    help="select the number of times to benchmark the chosen mode(s) (minimum 1)")
+parser.add_argument('--format', choices=format_options, help="choose sparse matrix format(s) to use (required)",
                     required=True)
-parser.add_argument('--mode', choices=mode_options, help="choose the function to execute (Required)", required=True)
-parser.add_argument('--path_a', help="path to the main matrix to be used for the chosen function (Required)",
+parser.add_argument('--mode', choices=mode_options, help="choose the function(s) to benchmark (required)", required=True)
+parser.add_argument('--path_a', help="path to the main matrix to be used for the benchmark (required)",
                     required=True)
 parser.add_argument('--path_b',
-                    help="path to the secondary matrix to be used for the chosen function (Required for modes add, sub and mmm)")
-parser.add_argument('--scalar', type=int, help="scalar value used for the chosen function (Required for mode sm)")
+                    help="path to the secondary matrix to be used for the benchmark (required for modes add, sub and mmm)")
+parser.add_argument('--scalar', type=int, help="scalar value used for the benchmark (required for mode sm)")
 parser.add_argument('--index', type=int,
-                    help="index of the row in the matrix to select as vector (Optional for mode mvm)")
+                    help="index of the row in the matrix to select as vector (optional for mode mvm; if not chosen, selected randomly)")
 parser.add_argument('-o', '--out', help="path to save the result to, otherwise it gets printed to stdout (JSON format)")
 # parser.add_argument('-t', '--threads', help="number of threads to use when running the code (default = 1) (currently not implemented)")
 

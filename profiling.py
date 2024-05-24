@@ -12,8 +12,8 @@ with open("./dicts.json", "r") as read_file:
 formats_dict = dicts['formats_dict']
 modes_dict = dicts['modes_dict']
 
-format_options = list(formats_dict.keys())
-mode_options = list(modes_dict.keys())
+format_options = list(formats_dict.keys())[:-1]
+mode_options = list(modes_dict.keys())[:-1]
 
 parser = argparse.ArgumentParser(description="sparse matrix function testing script")
 

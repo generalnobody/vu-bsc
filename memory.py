@@ -40,7 +40,7 @@ print(
 num_rows = temp_mtx.shape[0]
 num_cols = temp_mtx.shape[1]
 print("\nMemory usage:")
-results = [["Format", "Theoretical Size (bytes)", "Actual Size (bytes)"]]
+results = [["Format", "Theoretical Size (bytes)", "Actual Size (bytes)", "Overhead Ratio"]]
 for fmt in format_options:
     mtx = load_mm_file(args.input, fmt)
 
@@ -68,6 +68,9 @@ for fmt in format_options:
 
     actual_size = asizeof.asizeof(mtx)
     new_result.append(str(actual_size))
+
+    overhead_ratio = ((actual_size - theoretical_size) / theoretical_size) * 100
+    new_result.append(f"{int(overhead_ratio)}%")
 
     results.append(new_result)
 
