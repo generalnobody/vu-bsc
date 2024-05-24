@@ -29,10 +29,6 @@ class ModeHelpAction(argparse.Action):
 
 def perform_benchmark(mode, mtx_a, mtx_b=None, idx=-1, scl=-1, reps=0):
     benchmark_results = {'mode': mode}
-    # if mode == "spr":
-    #     benchmark_results['time'] = benchmark(mtx_splice_row, mtx_a, idx, reps=reps)
-    # elif mode == "spc":
-    #     benchmark_results['time'] = benchmark(mtx_splice_column, mtx_a, idx, reps=reps)
     if mode == "add":
         benchmark_results['time'] = benchmark(mtx_addition, mtx_a, mtx_b, reps=reps)
     elif mode == "sub":
@@ -46,8 +42,6 @@ def perform_benchmark(mode, mtx_a, mtx_b=None, idx=-1, scl=-1, reps=0):
         benchmark_results['time'] = benchmark(mtx_matrix_matrix_multiplication, mtx_a, mtx_b, reps=reps)
     elif mode == "tps":
         benchmark_results['time'] = benchmark(mtx_transposition, mtx_a, reps=reps)
-    # elif mode == "inv":  # Removed for now, since it only supports CSR and CSC formats
-    #     benchmark_results['time'] = benchmark(mtx_inversion, mtx_a, reps=reps)
 
     return benchmark_results
 
