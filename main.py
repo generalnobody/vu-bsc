@@ -3,6 +3,8 @@
 import argparse
 import sys
 import json
+import warnings
+import numpy as np
 
 from loader import load_mm_file
 from functions import *
@@ -36,7 +38,12 @@ def perform_benchmark(mode, mtx_a, mtx_b=None, idx=-1, scl=-1, reps=0):
     elif mode == "sm":
         benchmark_results['time'] = benchmark(mtx_scalar_multiplication, scl, mtx_a, reps=reps)
     elif mode == "mvm":
-        vec = mtx_a.getrow(idx)
+        vec = None
+        if mtx_a.__module__.startswith('torch'):
+            dense_mtx = mtx_a.to_dense()
+            vec = dense_mtx[idx]
+        elif mtx_a.__module__.startswith('scipy'):
+            vec = mtx_a.getrow(idx)
         benchmark_results['time'] = benchmark(mtx_matrix_vector_multiplication, mtx_a, vec, reps=reps)
     elif mode == "mmm":
         benchmark_results['time'] = benchmark(mtx_matrix_matrix_multiplication, mtx_a, mtx_b, reps=reps)
@@ -49,15 +56,15 @@ def perform_benchmark(mode, mtx_a, mtx_b=None, idx=-1, scl=-1, reps=0):
 def run_format(args):
     matrix_b = None
     row_index = 0
-    matrix_a = load_mm_file(args.path_a, args.format)
+    matrix_a = load_mm_file(args.path_a, args.format, args.pytorch)
     if matrix_a is None:
-        parser.exit()  # TODO: catch exceptions here and everywhere else
+        parser.exit()
 
     if args.mode == "add" or args.mode == "sub" or args.mode == "mmm" or args.mode == "full":
         if args.path_b is None:
             parser.error("option '%s' required for mode '%s'" % ("--path_b", args.mode))
         else:
-            matrix_b = load_mm_file(args.path_b, args.format)
+            matrix_b = load_mm_file(args.path_b, args.format, args.pytorch)
             if matrix_b is None:
                 parser.exit()
     if (args.mode == "sm" or args.mode == "full") and args.scalar is None:
@@ -73,13 +80,16 @@ def run_format(args):
 
     if args.mode == "full":
         for mode in mode_options[:-1]:
+            # if args.pytorch and mode in ['sub']:
+            #     continue
             fmt_results['results'].append(
                 perform_benchmark(mode, matrix_a, mtx_b=matrix_b, idx=row_index, scl=args.scalar, reps=args.benchmark)
             )
     else:
-        fmt_results['results'].append(
-            perform_benchmark(args.mode, matrix_a, mtx_b=matrix_b, idx=row_index, scl=args.scalar, reps=args.benchmark)
-        )
+        if args.pytorch and args.mode not in ['add', 'sub']:
+            fmt_results['results'].append(
+                perform_benchmark(args.mode, matrix_a, mtx_b=matrix_b, idx=row_index, scl=args.scalar, reps=args.benchmark)
+            )
 
     return fmt_results
 
@@ -115,6 +125,7 @@ parser.add_argument('--scalar', type=int, help="scalar value used for the benchm
 parser.add_argument('--index', type=int,
                     help="index of the row in the matrix to select as vector (optional for mode mvm; if not chosen, selected randomly)")
 parser.add_argument('-o', '--out', help="path to save the result to, otherwise it gets printed to stdout (JSON format)")
+parser.add_argument('-pt', '--pytorch', action="store_true", help="use pytorch instead of scipy (only works with coo, csr, csc and bsr formats)")
 # parser.add_argument('-t', '--threads', help="number of threads to use when running the code (default = 1) (currently not implemented)")
 
 parser_args = parser.parse_args()
@@ -122,13 +133,23 @@ parser_args = parser.parse_args()
 if parser_args.benchmark < 1:
     parser.error("value for --benchmark must at least 1")
 
+if not parser_args.out.endswith(".json"):
+    parser.error("output file should be in .json format")
+
+if parser_args.pytorch:
+    warnings.filterwarnings("ignore", category=UserWarning)
+
 results = {'data': []}
 
 if parser_args.format == "all":
     for fmt in format_options[:-1]:
+        if parser_args.pytorch and fmt not in ['coo', 'csr', 'csc', 'bsr']:
+            continue
         parser_args.format = fmt
         results['data'].append(run_format(parser_args))
 else:
+    if parser_args.pytorch and parser_args.format not in ['coo', 'csr', 'csc', 'bsr']:
+        parser.error("format '{}' is not supported by pytorch".format(parser_args))
     results['data'].append(run_format(parser_args))
 
 if parser_args.out is None:

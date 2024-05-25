@@ -2,6 +2,7 @@
 from scipy.io import mmread
 from scipy.sparse import *
 import warnings
+import torch.sparse
 
 
 # Checks if the provided file is a MatrixMarket file
@@ -25,32 +26,50 @@ def is_mm_format(file_path):
 
 
 # Loads the file into one of the chosen sparse matrix formats
-def load_mm_file(file_path, fmt):
+def load_mm_file(file_path, fmt, pytorch):
     try:
         if not is_mm_format(file_path):
             return None
 
         sparse_matrix = mmread(file_path)
 
+        return_matrix = None
+
         if fmt == "coo":
-            return coo_matrix(sparse_matrix)
+            return_matrix = coo_matrix(sparse_matrix)
         elif fmt == "csr":
-            return csr_matrix(sparse_matrix)
+            return_matrix = csr_matrix(sparse_matrix)
         elif fmt == "csc":
-            return csc_matrix(sparse_matrix)
+            return_matrix = csc_matrix(sparse_matrix)
         elif fmt == "dia":
             # Filter out the SparseEfficiencyWarning
             warnings.filterwarnings("ignore", category=SparseEfficiencyWarning)
-            return dia_matrix(sparse_matrix)
+            return_matrix = dia_matrix(sparse_matrix)
         elif fmt == "bsr":
-            return bsr_matrix(sparse_matrix)
+            return_matrix = bsr_matrix(sparse_matrix)
         elif fmt == "lil":
-            return lil_matrix(sparse_matrix)
+            return_matrix = lil_matrix(sparse_matrix)
         elif fmt == "dok":
-            return dok_matrix(sparse_matrix)
+            return_matrix = dok_matrix(sparse_matrix)
         else:
             print("Error: unknown format '{}'".format(fmt))
-            return None
+
+        if pytorch and return_matrix is not None:
+            dense_matrix = return_matrix.toarray()
+            torch_matrix = torch.tensor(dense_matrix, dtype=torch.float64)
+            if fmt == "coo":
+                return_matrix = torch_matrix.to_sparse_coo()
+            elif fmt == "csr":
+                return_matrix = torch_matrix.to_sparse_csr()
+            elif fmt == "csc":
+                return_matrix = torch_matrix.to_sparse_csr()
+            elif fmt == "bsr":
+                blocksize = return_matrix.blocksize
+                return_matrix = torch_matrix.to_sparse_bsr(blocksize)
+            else:
+                return None
+
+        return return_matrix
 
     except Exception as e:
         return None
