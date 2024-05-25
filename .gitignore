@@ -2,6 +2,7 @@
 __pycache__
 plots
 *.txt
+!requirements.txt
 
 # JSON files whitelist
 *.json

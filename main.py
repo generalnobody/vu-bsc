@@ -131,27 +131,30 @@ parser_args = parser.parse_args()
 if parser_args.benchmark < 1:
     parser.error("value for --benchmark must at least 1")
 
-if not parser_args.out.endswith(".json"):
+if parser_args.out is not None and not parser_args.out.endswith(".json"):
     parser.error("output file should be in .json format")
 
 if parser_args.pytorch:
     warnings.filterwarnings("ignore", category=UserWarning)
 
-results = {'data': []}
+try:
+    results = {'data': []}
 
-if parser_args.format == "all":
-    for fmt in format_options[:-1]:
-        if parser_args.pytorch and fmt not in ['coo', 'csr', 'csc', 'bsr']:
-            continue
-        parser_args.format = fmt
+    if parser_args.format == "all":
+        for fmt in format_options[:-1]:
+            if parser_args.pytorch and fmt not in ['coo', 'csr', 'csc', 'bsr']:
+                continue
+            parser_args.format = fmt
+            results['data'].append(run_format(parser_args))
+    else:
+        if parser_args.pytorch and parser_args.format not in ['coo', 'csr', 'csc', 'bsr']:
+            parser.error("format '{}' is not supported by pytorch".format(parser_args))
         results['data'].append(run_format(parser_args))
-else:
-    if parser_args.pytorch and parser_args.format not in ['coo', 'csr', 'csc', 'bsr']:
-        parser.error("format '{}' is not supported by pytorch".format(parser_args))
-    results['data'].append(run_format(parser_args))
 
-if parser_args.out is None:
-    print(json.dumps(results, indent=4))
-else:
-    with open(parser_args.out, "w") as write_file:
-        json.dump(results, write_file, indent=4)
+    if parser_args.out is None:
+        print(json.dumps(results, indent=4))
+    else:
+        with open(parser_args.out, "w") as write_file:
+            json.dump(results, write_file, indent=4)
+except Exception as e:
+    print(e)
