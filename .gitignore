@@ -1,6 +1,7 @@
 .idea
 __pycache__
 plots
+*.txt
 
 # JSON files whitelist
 *.json

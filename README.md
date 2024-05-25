@@ -81,3 +81,15 @@ Same options as shown in [main.py's usage](#usage), excluding the **-b** and **-
 ```shell
 $ python profiling.py --format coo --mode add --path_a sample.mtx --path_b sample2.mtx
 ```
+
+## Matrix Selection
+In this project, in the [./matrices](./matrices) folder, there are sample matrices from [SuiteSparse](https://sparse.tamu.edu/) that were used in getting the results for the final thesis paper. The aim was to find matrices that would allow to test the different Sparse Matrix formats as extensively as possible, so I chose a matrix that had diagonals, a matrix that had blocks, as well as matrices that had a more "random" distribution of points.
+
+### Diagonals
+The [Trefethen_700.mtx](./matrices/Trefethen_700.mtx) matrix has several diagonals, so it should theoretically benefit from being loaded into the DIA format.
+
+### Blocks
+The [Erdos02.mtx](./matrices/Erdos02.mtx) has extremely dense data along the left and top edges of the matrix, while the rest is empty. This should theoretically be dividable into blocks, which should benefit from being loaded into the BSR format.
+
+### Random
+The other two matrices have a more or less random distribution. These should therefore show worse performance in the DIA and BSR formats, but comparatively better performance in the other formats.
