@@ -80,8 +80,6 @@ def run_format(args):
 
     if args.mode == "full":
         for mode in mode_options[:-1]:
-            # if args.pytorch and mode in ['sub']:
-            #     continue
             fmt_results['results'].append(
                 perform_benchmark(mode, matrix_a, mtx_b=matrix_b, idx=row_index, scl=args.scalar, reps=args.benchmark)
             )
