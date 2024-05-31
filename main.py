@@ -124,7 +124,6 @@ parser.add_argument('--index', type=int,
                     help="index of the row in the matrix to select as vector (optional for mode mvm; if not chosen, selected randomly)")
 parser.add_argument('-o', '--out', help="path to save the result to, otherwise it gets printed to stdout (JSON format)")
 parser.add_argument('-pt', '--pytorch', action="store_true", help="use pytorch instead of scipy (only works with coo, csr, csc and bsr formats)")
-# parser.add_argument('-t', '--threads', help="number of threads to use when running the code (default = 1) (currently not implemented)")
 
 parser_args = parser.parse_args()
 

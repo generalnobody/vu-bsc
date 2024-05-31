@@ -11,14 +11,14 @@ with open("./dicts.json", "r") as read_file:
 
 format_options = list(dicts['formats_dict'].keys())[:-1]
 
-parser = argparse.ArgumentParser(
-    description="calculates the number of bytes used by each format with the provided matrix")
+parser = argparse.ArgumentParser(description="calculates the number of bytes used by each format with the provided matrix (does not support pytorch library)")
 
 parser.add_argument("-i", "--input", help="input file, MatrixMarket format", required=True)
+parser.add_argument('-o', '--output', help="CSV file to output result to; if not specified, only prints result to stdout (optional)")
 
 args = parser.parse_args()
 
-temp_mtx = load_mm_file(args.input, 'coo')
+temp_mtx = load_mm_file(args.input, 'coo', False)
 nnz = temp_mtx.nnz
 entry_type = temp_mtx.dtype
 entry_size = entry_type.itemsize
@@ -27,22 +27,19 @@ print(f"Number of non-zero entries in matrix is {nnz}. The type is {entry_type} 
 
 print("\nTheoretical memory usage per format (explanation):")
 print("COO - stores triplets (i,j,v) where i and j are int32 (4 bytes) and v is float64 (8 bytes)")
-print(
-    "CSR - stores row pointers, column indices, and values. Requires storage for row pointers (number of rows + 1) (int32, to 4 bytes per entry), column indices (int32, to 4 bytes per entry), values")
+print("CSR - stores row pointers, column indices, and values. Requires storage for row pointers (number of rows + 1) (int32, to 4 bytes per entry), column indices (int32, to 4 bytes per entry), values")
 print("CSC - same as CSR, but for columns")
 print("DIA - stores data for diagonals, if lot of bytes, suggests many diagonals or inefficient diagonals")
 print("BSR - stores blocks of values, size depends on block size or density pattern")
-print(
-    "LIL - stores each row as a list. Size depends on how efficient construction is but is generally close to theoretical number of bytes required + a bit of overhead")
-print(
-    "DOK - stores everything in a dictionary, using indices as keys and values as values. Flexible but usually extremely high overhead, due to both Python's dict structure and the tuple keys")
+print("LIL - stores each row as a list. Size depends on how efficient construction is but is generally close to theoretical number of bytes required + a bit of overhead")
+print("DOK - stores everything in a dictionary, using indices as keys and values as values. Flexible but usually extremely high overhead, due to both Python's dict structure and the tuple keys")
 
 num_rows = temp_mtx.shape[0]
 num_cols = temp_mtx.shape[1]
 print("\nMemory usage:")
 results = [["Format", "Theoretical Size (bytes)", "Actual Size (bytes)", "Overhead Ratio"]]
 for fmt in format_options:
-    mtx = load_mm_file(args.input, fmt)
+    mtx = load_mm_file(args.input, fmt, False)
 
     new_result = [fmt.upper()]
     theoretical_size = -1
