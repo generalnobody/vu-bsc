@@ -83,7 +83,7 @@ try:
         new_result.append(str(actual_size))
 
         overhead_ratio = ((actual_size - theoretical_size) / theoretical_size) * 100
-        new_result.append(f"{int(overhead_ratio)}")
+        new_result.append(f"{overhead_ratio:.2f}")
 
         results.append(new_result)
 

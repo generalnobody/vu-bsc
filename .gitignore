@@ -1,6 +1,7 @@
 .idea
 __pycache__
 plots
+csvs
 *.txt
 !requirements.txt
 
