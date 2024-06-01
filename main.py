@@ -93,14 +93,18 @@ def run_format(args):
 
 
 # Removed inversion, check later if it is actually possible
-with open("./dicts.json", "r") as read_file:
-    dicts = json.load(read_file)
+try:
+    with open("./dicts.json", "r") as read_file:
+        dicts = json.load(read_file)
 
-formats_dict = dicts['formats_dict']
-modes_dict = dicts['modes_dict']
+    formats_dict = dicts['formats_dict']
+    modes_dict = dicts['modes_dict']
 
-format_options = list(formats_dict.keys())
-mode_options = list(modes_dict.keys())
+    format_options = list(formats_dict.keys())
+    mode_options = list(modes_dict.keys())
+except Exception as e:
+    print(e)
+    exit(1)
 
 parser = argparse.ArgumentParser(description="sparse matrix benchmarking script")
 

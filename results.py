@@ -80,43 +80,47 @@ parser.add_argument("-s", "--show",
 
 args = parser.parse_args()
 
-with open(args.file, "r") as read_file:
-    data = json.load(read_file)
+try:
+    with open(args.file, "r") as read_file:
+        data = json.load(read_file)
 
-with open("./dicts.json", "r") as read_file:
-    dicts = json.load(read_file)
+    with open("./dicts.json", "r") as read_file:
+        dicts = json.load(read_file)
 
-cleaned_path = args.output.rstrip('/')
-mode_path = f"{cleaned_path}/mode"
-if not os.path.exists(mode_path):
-    os.makedirs(mode_path)
-format_path = f"{cleaned_path}/format"
-if not os.path.exists(format_path):
-    os.makedirs(format_path)
+    cleaned_path = args.output.rstrip('/')
+    mode_path = f"{cleaned_path}/mode"
+    if not os.path.exists(mode_path):
+        os.makedirs(mode_path)
+    format_path = f"{cleaned_path}/format"
+    if not os.path.exists(format_path):
+        os.makedirs(format_path)
 
-if args.plot == "mode" or args.plot == "both":
-    plot_mode_benchmark(data, cleaned_path, args.show, dicts)
-if args.plot == "format" or args.plot == "both":
-    plot_format_benchmark(data, cleaned_path, args.show, dicts)
+    if args.plot == "mode" or args.plot == "both":
+        plot_mode_benchmark(data, cleaned_path, args.show, dicts)
+    if args.plot == "format" or args.plot == "both":
+        plot_format_benchmark(data, cleaned_path, args.show, dicts)
 
-# TODO: write function that prints the statistics for all the results in the benchmark\
-stats = [["Format", "Benchmark", "Min", "25%", "50% (Median)", "75%", "Max", "Standard Deviation", "Mean", "Variance",
-          "Range"]]
-for fmt in data['data']:
-    for res in fmt['results']:
-        percentiles = st.quantiles(res['time'], n=4)
-        stats.append([
-            fmt['format'].upper(),
-            dicts['modes_dict'][res['mode']],
-            min(res['time']) * 1000,
-            percentiles[0] * 1000,
-            st.median(res['time']) * 1000,
-            percentiles[2] * 1000,
-            max(res['time']) * 1000,
-            st.stdev(res['time']) * 1000,
-            st.mean(res['time']) * 1000,
-            st.variance(res['time']) * 1000,
-            max(res['time']) - min(res['time']) * 1000
-        ])
-arr = np.array(stats)
-np.savetxt(f"{cleaned_path}/stats.csv", arr, fmt='%s', delimiter=', ')
+    # TODO: write function that prints the statistics for all the results in the benchmark\
+    stats = [
+        ["Format", "Benchmark", "Min", "25%", "50% (Median)", "75%", "Max", "Standard Deviation", "Mean", "Variance",
+         "Range"]]
+    for fmt in data['data']:
+        for res in fmt['results']:
+            percentiles = st.quantiles(res['time'], n=4)
+            stats.append([
+                fmt['format'].upper(),
+                dicts['modes_dict'][res['mode']],
+                min(res['time']) * 1000,
+                percentiles[0] * 1000,
+                st.median(res['time']) * 1000,
+                percentiles[2] * 1000,
+                max(res['time']) * 1000,
+                st.stdev(res['time']) * 1000,
+                st.mean(res['time']) * 1000,
+                st.variance(res['time']) * 1000,
+                max(res['time']) - min(res['time']) * 1000
+            ])
+    arr = np.array(stats)
+    np.savetxt(f"{cleaned_path}/stats.csv", arr, fmt='%s', delimiter=', ')
+except Exception as e:
+    print(e)
