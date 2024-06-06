@@ -69,7 +69,7 @@ parser = argparse.ArgumentParser(
     description="shows the results of the sparse matrix benchmarking script in clear formats")
 
 parser.add_argument("-f", "--file", help="path to JSON file generated with sparse matrix benchmarking", required=True)
-parser.add_argument("--plot", help="whether to plot based on the function or based on the format",
+parser.add_argument("--plot", help="whether to plot based on the function, based on the format or both",
                     choices={"mode", "format", "both"}, required=True)
 parser.add_argument("-o", "--output",
                     help="specifies the folder in which to save the generated plot(s) (default: ./plots)",
