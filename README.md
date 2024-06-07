@@ -42,13 +42,13 @@ To plot the results and get additional statistics, run the [results.py](./result
 
 ### Usage
 ```shell
-$ python results.py [-h] -f FILE --plot {both,format,mode} [-o OUTPUT] [-s]
+$ python results.py [-h] -f FILE [-ptf PYTORCH_FILE] [-o OUTPUT] [-s]
 ```
 
 **Options:**
 * **-h, --help**: shows the help message
 * **-f, --file**: path to JSON file generated using [main.py](./main.py)
-* **--plot**: select whether to plot based on function or format, or both (both recommended)
+* **-ptf, --pytorch_file**: path to JSON file generated with pytorch benchmarking
 * **-o, --output**: specify the folder to which to save the generated plot(s) (default: ./plots)
 * **-s, --show**: show the plots as they are generated (not recommended when provided JSON file contains multiple results)
 

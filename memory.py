@@ -51,7 +51,7 @@ try:
     num_rows = temp_mtx.shape[0]
     num_cols = temp_mtx.shape[1]
     print("\nMemory usage:")
-    results = [["Format", "Theoretical Size (bytes)", "Actual Size (bytes)", "Overhead Ratio (%)"]]
+    results = [["Format", "Theoretical Size (bytes)", "Actual Size (bytes)", "Overhead Ratio (percent)"]]
     for fmt in format_options:
         mtx = load_mm_file(args.input, fmt, False)
         if mtx is None:

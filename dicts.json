@@ -11,10 +11,10 @@
   },
   "modes_dict": {
     "add": "Matrix Addition",
-    "sub": "Matrix subtraction",
+    "sub": "Matrix Subtraction",
     "sm": "Scalar Multiplication",
-    "mvm": "Sparse matrix-vector multiplication",
-    "mmm": "Sparse matrix-matrix multiplication",
+    "mvm": "Sparse Matrix-Vector Multiplication",
+    "mmm": "Sparse Matrix-Matrix Multiplication",
     "tps": "Transposition",
     "full": "Run all above-mentioned functions"
   }
