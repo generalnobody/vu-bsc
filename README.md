@@ -1,12 +1,12 @@
 # BSc Project - Sparse Matrix Formats
-_Note: this project is built using Python 3.11.5. It has been tested to work on Python 3.6, but not on older versions. Shell instructions in this file use the `python` command, but if Python 2.7 is also installed, may require the `python3` command, depending on settings._
+_Note: this project is built using Python 3.11.5. It has not been tested to fully work on older versions. On Python 3.6 everything except for the PyTorch functionality works._
 
 ## Run Benchmark
 To benchmark the Sparse Matrix operations, run the [main.py](./main.py) script.
 
 ### Usage
 ```shell
-$ python main.py [-h] [--format_help] [--mode_help] -b BENCHMARK --format {coo,csr,csc,dia,bsr,lil,dok,all} --mode {add,sub,sm,mvm,mmm,tps,full} --path_a PATH_A [--path_b PATH_B] [--scalar SCALAR] [--index INDEX] [-o OUT]
+$ python main.py [-h] [--format_help] [--mode_help] -b BENCHMARK --format {coo,csr,csc,dia,bsr,lil,dok,all} --mode {add,sub,sm,mvm,mmm,tps,full} --path_a PATH_A [--path_b PATH_B] [--scalar SCALAR] [--index INDEX] [-o OUT] [-pt]
 ```
 
 **Main options:**
@@ -19,14 +19,22 @@ $ python main.py [-h] [--format_help] [--mode_help] -b BENCHMARK --format {coo,c
 * **--scalar**: scalar function used for the benchmark (required for mode sm)
 * **--index**: index of the row in the matrix to select as vector (optional for mode mvm; if not chosen, selected randomly)
 * **-o, --out**: file to save the result to (JSON format)
+* **-pt, --pytorch**: use PyTorch instead of SciPy (only works with coo, csr, csc and bsr formats)
 
 **Additional help menus:**
 * **--format_help**: show additional information about the possible formats
 * **--mode_help**: show additional information about the possible modes
 
 ### Example
+
+Using SciPy:
 ```shell
 $ python main.py --format all --mode full --path_a sample.mtx --path_b sample2.mtx --scalar 10 --index 1 -o output.json
+```
+
+Or using PyTorch:
+```shell
+$ python main.py --format all --mode full --path_a sample.mtx --path_b sample2.mtx --scalar 10 --index 1 -o output_pt.json -pt
 ```
 
 ## Get Plotted Results
@@ -38,11 +46,11 @@ $ python results.py [-h] -f FILE --plot {both,format,mode} [-o OUTPUT] [-s]
 ```
 
 **Options:**
-* **-h**: shows the help message
-* **-f**: path to JSON file generated using [main.py](./main.py)
+* **-h, --help**: shows the help message
+* **-f, --file**: path to JSON file generated using [main.py](./main.py)
 * **--plot**: select whether to plot based on function or format, or both (both recommended)
-* **-o**: specify the folder to which to save the generated plot(s) (default: ./plots)
-* **-s**: show the plots as they are generated (not recommended when provided JSON file contains multiple results)
+* **-o, --output**: specify the folder to which to save the generated plot(s) (default: ./plots)
+* **-s, --show**: show the plots as they are generated (not recommended when provided JSON file contains multiple results)
 
 ### Example
 ```shell
@@ -54,12 +62,13 @@ To compare the theoretical memory usage to the actual memory usage of a sparse m
 
 ### Usage
 ```shell
-$ python memory.py [-h] -i INPUT
+$ python memory.py [-h] -i INPUT [-o OUTPUT]
 ```
 
 **Options:**
-* **-h**: shows the help message
-* **-i**: path to input file (mtx format) (required)
+* **-h, --help**: shows the help message
+* **-i, --input**: path to input file (mtx format) (required)
+* **-o, --output**: CSV file to output result to; if not specified, only prints result to stdout (optional)
 
 ### Example
 
@@ -92,4 +101,4 @@ The [Trefethen_700.mtx](./matrices/Trefethen_700.mtx) matrix has several diagona
 The [Erdos02.mtx](./matrices/Erdos02.mtx) has extremely dense data along the left and top edges of the matrix, while the rest is empty. This should theoretically be dividable into blocks, which should benefit from being loaded into the BSR format.
 
 ### Random
-The other two matrices have a more or less random distribution. These should therefore show worse performance in the DIA and BSR formats, but comparatively better performance in the other formats.
+The other two matrices, [ash219.mtx](./matrices/ash219.mtx) and [mk12-b2.mtx](./matrices/mk12-b2.mtx), have a more or less random distribution. These should therefore show worse performance in the DIA and BSR formats, but comparatively better performance in the other formats. One is larger, being able to showcase differences in performance in case of larger matrices, while the other is smaller, being able to showcase the opposite.
