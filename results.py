@@ -11,8 +11,15 @@ import numpy as np
 matplotlib.use('Agg')
 
 
+def format_float(value):
+    try:
+        return "{:.2e}".format(float(value))
+    except ValueError:
+        return value
+
+
 def plot_boxplot(data, labels, title, ylabel, save_path, show):
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(8, 5))
     plt.boxplot(data, labels=labels, vert=0)
     plt.xscale('log')
     plt.title(title)
@@ -23,6 +30,7 @@ def plot_boxplot(data, labels, title, ylabel, save_path, show):
         plt.show()
     else:
         plt.close()
+
 
 # This function plots the results in a boxplot. If there are pytorch results, includes those in the result.
 # It plots the results per operation, meaning that for each tested function, it shows the performance of each format and, if available, each format using pytorch too
@@ -39,7 +47,7 @@ def plot_results(data, pytorch_data, output, show, dicts):
         for fmt in pytorch_data['data']:
             for res in fmt['results']:
                 times = [x * 1000 for x in res['time']]  # Gets the times in milliseconds (ms)
-                results_dict[res['mode']].append({'format': f"{fmt['format'].upper()} (PyTorch)", 'time': times})
+                results_dict[res['mode']].append({'format': f"{fmt['format'].upper()}\n(PyTorch)", 'time': times})
 
     for mode, res in results_dict.items():
         group_data = []
@@ -51,7 +59,7 @@ def plot_results(data, pytorch_data, output, show, dicts):
 
         title = dicts['modes_dict'][mode]
         ylabel = "Formats"
-        savepath = f"{output}/{dicts['modes_dict'][mode]}.png"
+        savepath = f"{output}/{dicts['modes_dict'][mode]}.jpg"
         plot_boxplot(group_data, group_labels, title, ylabel, savepath, show)
 
 
@@ -123,7 +131,9 @@ try:
                     st.variance(res['time']) * 1000,
                     max(res['time']) - min(res['time']) * 1000
                 ])
+    vectorized_format = np.vectorize(format_float)
     arr = np.array(stats)
+    arr[1:, 2:] = vectorized_format(arr[1:, 2:])
     np.savetxt(f"{cleaned_path}/stats.csv", arr, fmt='%s', delimiter=', ')
 except Exception as e:
     print(e)
