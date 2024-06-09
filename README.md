@@ -42,7 +42,7 @@ To plot the results and get additional statistics, run the [results.py](./result
 
 ### Usage
 ```shell
-$ python results.py [-h] -f FILE [-ptf PYTORCH_FILE] [-o OUTPUT] [-s]
+$ python results.py [-h] -f FILE [-ptf PYTORCH_FILE] [-o OUTPUT]
 ```
 
 **Options:**
@@ -50,7 +50,6 @@ $ python results.py [-h] -f FILE [-ptf PYTORCH_FILE] [-o OUTPUT] [-s]
 * **-f, --file**: path to JSON file generated using [main.py](./main.py)
 * **-ptf, --pytorch_file**: path to JSON file generated with pytorch benchmarking
 * **-o, --output**: specify the folder to which to save the generated plot(s) (default: ./plots)
-* **-s, --show**: show the plots as they are generated (not recommended when provided JSON file contains multiple results)
 
 ### Example
 ```shell

@@ -18,7 +18,7 @@ def format_float(value):
         return value
 
 
-def plot_boxplot(data, labels, title, ylabel, save_path, show):
+def plot_boxplot(data, labels, title, ylabel, save_path):
     plt.figure(figsize=(8, 5))
     plt.boxplot(data, labels=labels, vert=0)
     plt.xscale('log')
@@ -26,15 +26,12 @@ def plot_boxplot(data, labels, title, ylabel, save_path, show):
     plt.xlabel("Time (ms)")
     plt.ylabel(ylabel)
     plt.savefig(save_path)
-    if show is True:
-        plt.show()
-    else:
-        plt.close()
+    plt.close()
 
 
 # This function plots the results in a boxplot. If there are pytorch results, includes those in the result.
 # It plots the results per operation, meaning that for each tested function, it shows the performance of each format and, if available, each format using pytorch too
-def plot_results(data, pytorch_data, output, show, dicts):
+def plot_results(data, pytorch_data, output, dicts):
     results_dict = {}
     for mode in list(dicts['modes_dict'].keys())[:-1]:
         results_dict[mode] = []
@@ -60,7 +57,7 @@ def plot_results(data, pytorch_data, output, show, dicts):
         title = dicts['modes_dict'][mode]
         ylabel = "Formats"
         savepath = f"{output}/{dicts['modes_dict'][mode]}.jpg"
-        plot_boxplot(group_data, group_labels, title, ylabel, savepath, show)
+        plot_boxplot(group_data, group_labels, title, ylabel, savepath)
 
 
 parser = argparse.ArgumentParser(
@@ -71,9 +68,6 @@ parser.add_argument("-ptf", "--pytorch_file", help="path to JSON file generated 
 parser.add_argument("-o", "--output",
                     help="specifies the folder in which to save the generated plot(s) (default: ./plots)",
                     default="./plots")
-parser.add_argument("-s", "--show",
-                    help="whether to show the generated plot(s) (default: False) (not recommended when provided JSON file contains multiple results)",
-                    action="store_true")
 
 args = parser.parse_args()
 
@@ -93,7 +87,7 @@ try:
         with open(args.pytorch_file, "r") as read_file:
             pytorch_data = json.load(read_file)
 
-    plot_results(data, pytorch_data, cleaned_path, args.show, dicts)
+    plot_results(data, pytorch_data, cleaned_path, dicts)
     stats = [
         ["Format", "Benchmark", "Min", "P25", "P50 (Median)", "P75", "Max", "Standard Deviation", "Mean", "Variance",
          "Range"]]
