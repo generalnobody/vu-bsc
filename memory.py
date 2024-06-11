@@ -33,8 +33,9 @@ try:
     nnz = temp_mtx.nnz
     entry_type = temp_mtx.dtype
     entry_size = entry_type.itemsize
+    base_bytes = nnz * entry_size
     print(f"Number of non-zero entries in matrix is {nnz}. The type is {entry_type} with size {entry_size} bytes.\n"
-          f"The non-zero entries require {nnz * entry_size} bytes.")
+          f"The non-zero entries require {base_bytes} bytes.")
 
     print("\nTheoretical memory usage per format (explanation):")
     print("COO - stores triplets (i,j,v) where i and j are int32 (4 bytes) and v is float64 (8 bytes)")
@@ -51,7 +52,8 @@ try:
     num_rows = temp_mtx.shape[0]
     num_cols = temp_mtx.shape[1]
     print("\nMemory usage:")
-    results = [["Format", "Theoretical Size (bytes)", "Actual Size (bytes)", "Overhead Ratio (percent)"]]
+    results = [["Format", "Theoretical Size (bytes)", "Actual Size (bytes)", "Overhead Ratio (percent)", "Overhead to Base (percent)"],
+               ["Base", str(base_bytes), str(base_bytes), "0", "0"]]
     for fmt in format_options:
         mtx = load_mm_file(args.input, fmt, False)
         if mtx is None:
@@ -84,6 +86,9 @@ try:
 
         overhead_ratio = ((actual_size - theoretical_size) / theoretical_size) * 100
         new_result.append(f"{overhead_ratio:.2f}")
+
+        overhead_to_base = ((actual_size - base_bytes) / base_bytes) * 100
+        new_result.append(f"{overhead_to_base:.2f}")
 
         results.append(new_result)
 
