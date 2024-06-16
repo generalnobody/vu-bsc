@@ -93,6 +93,24 @@ $ python profiling.py --format coo --mode add --path_a sample.mtx --path_b sampl
 ## Matrix Selection
 In this project, in the [./matrices](./matrices) folder, there are sample matrices from [SuiteSparse](https://sparse.tamu.edu/) that were used in getting the results for the final thesis paper. The aim was to find matrices that would allow to test the different Sparse Matrix formats as extensively as possible, so I chose a matrix that had diagonals, a matrix that had blocks, as well as matrices that had a more "random" distribution of points.
 
+These matrices can be plotted into a plot with subplots using the [sparse_plot.py](./sparse_plot.py) script.
+
+### Usage
+
+```shell
+$ python sparse_plot.py [-h] -f FILE [FILE ...] -o OUTPUT
+```
+
+**Options:**
+* **-h, --help**: shows the help message
+* **-f, --file**: path to MatrixMarket file(s) (multiple possible)
+* **-o, --output**: file to output the plot to (any format possible, including PDF, EPS, JPG, PNG)
+
+### Example
+```shell
+$ python sparse_plot.py -f matrices/*.mtx -o matrices/matrices.eps
+```
+
 ### Diagonals
 The [Trefethen_700.mtx](./matrices/Trefethen_700.mtx) matrix has several diagonals, so it should theoretically benefit from being loaded into the DIA format.
 
