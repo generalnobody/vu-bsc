@@ -76,21 +76,6 @@ $ python memory.py [-h] -i INPUT [-o OUTPUT]
 $ python memory.py sample.mtx
 ```
 
-## Profiling
-Provides more detailed profiling results for any operation possible in [main.py](./main.py). To get these results, run the [profiling.py](./profiling.py) script.
-
-### Usage
-```shell
-$ python profiling.py [-h] [--format_help] [--mode_help] --format {coo,csr,csc,dia,bsr,lil,dok} --mode {add,sub,sm,mvm,mmm,tps} --path_a PATH_A [--path_b PATH_B] [--scalar SCALAR] [--index INDEX]
-```
-
-Same options as shown in [main.py's usage](#usage), excluding the **-b** and **-o** arguments.
-
-### Example
-```shell
-$ python profiling.py --format coo --mode add --path_a sample.mtx --path_b sample2.mtx
-```
-
 ## Matrix Selection
 In this project, in the [./matrices](./matrices) folder, there are sample matrices from [SuiteSparse](https://sparse.tamu.edu/) that were used in getting the results for the final thesis paper. The aim was to find matrices that would allow to test the different Sparse Matrix formats as extensively as possible, so I chose a matrix that had diagonals, a matrix that had blocks, as well as matrices that had a more "random" distribution of points.
 
