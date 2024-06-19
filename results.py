@@ -7,6 +7,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import statistics as st
 import numpy as np
+from math import ceil
 
 matplotlib.use('Agg')
 
@@ -18,20 +19,9 @@ def format_float(value):
         return value
 
 
-def plot_boxplot(data, labels, title, ylabel, save_path):
-    plt.figure(figsize=(8, 5))
-    plt.boxplot(data, labels=labels, vert=0)
-    plt.xscale('log')
-    plt.title(title)
-    plt.xlabel("Time (ms)")
-    plt.ylabel(ylabel)
-    plt.savefig(save_path)
-    plt.close()
-
-
 # This function plots the results in a boxplot. If there are pytorch results, includes those in the result.
 # It plots the results per operation, meaning that for each tested function, it shows the performance of each format and, if available, each format using pytorch too
-def plot_results(data, pytorch_data, output, dicts):
+def plot_results(data, pytorch_data, output, output_format, dicts):
     results_dict = {}
     for mode in list(dicts['modes_dict'].keys())[:-1]:
         results_dict[mode] = []
@@ -46,7 +36,17 @@ def plot_results(data, pytorch_data, output, dicts):
                 times = [x * 1000 for x in res['time']]  # Gets the times in milliseconds (ms)
                 results_dict[res['mode']].append({'format': f"{fmt['format'].upper()}\n(PyTorch)", 'time': times})
 
-    for mode, res in results_dict.items():
+    num_iters = len(results_dict)
+    num_rows = int(ceil(num_iters / 2))
+
+    fig, axes = plt.subplots(num_rows, 2, figsize=(16, num_rows * 5), sharex='all', sharey='all', subplot_kw={'xscale': 'log', 'xlabel': 'Time (ms)', 'ylabel': 'Formats'})
+
+    if num_rows > 1:
+        axs = axes.flatten()
+    else:
+        axs = [axes]
+
+    for i, (mode, res) in enumerate(results_dict.items()):
         group_data = []
         group_labels = []
 
@@ -55,9 +55,17 @@ def plot_results(data, pytorch_data, output, dicts):
             group_labels.append(d['format'])
 
         title = dicts['modes_dict'][mode]
-        ylabel = "Formats"
-        savepath = f"{output}/{dicts['modes_dict'][mode]}.jpg"
-        plot_boxplot(group_data, group_labels, title, ylabel, savepath)
+        savepath = f"{output}/{dicts['modes_dict'][mode]}.{output_format}"
+
+        axs[i].boxplot(group_data, labels=group_labels, vert=0)
+        axs[i].set_title(f"{chr(i + 97)}) {title}")
+
+    for j in range(len(results_dict), len(axs)):
+        fig.delaxes(axs[j])
+
+    plt.tight_layout()
+    plt.savefig(f"{output}/plots.{output_format}")
+    plt.close()
 
 
 parser = argparse.ArgumentParser(
@@ -68,6 +76,7 @@ parser.add_argument("-ptf", "--pytorch_file", help="path to JSON file generated 
 parser.add_argument("-o", "--output",
                     help="specifies the folder in which to save the generated plot(s) (default: ./plots)",
                     default="./plots")
+parser.add_argument("-fmt", "--format", help="specifies the output files format (default: pdf)", default="pdf")
 
 args = parser.parse_args()
 
@@ -87,7 +96,7 @@ try:
         with open(args.pytorch_file, "r") as read_file:
             pytorch_data = json.load(read_file)
 
-    plot_results(data, pytorch_data, cleaned_path, dicts)
+    plot_results(data, pytorch_data, cleaned_path, args.format, dicts)
     stats = [
         ["Format", "Benchmark", "Min", "P25", "P50 (Median)", "P75", "Max", "Standard Deviation", "Mean", "Variance",
          "Range"]]
