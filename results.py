@@ -12,6 +12,7 @@ from math import ceil
 matplotlib.use('Agg')
 
 
+# Convert float to string
 def format_float(value):
     try:
         return "{:.2e}".format(float(value))
@@ -20,16 +21,18 @@ def format_float(value):
 
 
 # This function plots the results in a boxplot. If there are pytorch results, includes those in the result.
-# It plots the results per operation, meaning that for each tested function, it shows the performance of each format and, if available, each format using pytorch too
+# It plots the results per operation, meaning that for each tested function, it shows the performance of each format and, if available, each format using PyTorch too
 def plot_results(data, pytorch_data, output, output_format, dicts):
+    # Prepare results dictionary
     results_dict = {}
     for mode in list(dicts['modes_dict'].keys())[:-1]:
         results_dict[mode] = []
+
+    # Convert time from seconds to milliseconds for SciPy and PyTorch
     for fmt in data['data']:
         for res in fmt['results']:
             times = [x * 1000 for x in res['time']]  # Gets the times in milliseconds (ms)
             results_dict[res['mode']].append({'format': fmt['format'].upper(), 'time': times})
-
     if pytorch_data is not None:
         for fmt in pytorch_data['data']:
             for res in fmt['results']:
@@ -39,6 +42,7 @@ def plot_results(data, pytorch_data, output, output_format, dicts):
     num_iters = len(results_dict)
     num_rows = int(ceil(num_iters / 2))
 
+    # Generate figure subplots with shared x and y axes, as well as with x and y axes labels/scaling.
     fig, axes = plt.subplots(num_rows, 2, figsize=(16, num_rows * 5), sharex='all', sharey='all', subplot_kw={'xscale': 'log', 'xlabel': 'Time (ms)', 'ylabel': 'Formats'})
 
     if num_rows > 1:
@@ -46,6 +50,7 @@ def plot_results(data, pytorch_data, output, output_format, dicts):
     else:
         axs = [axes]
 
+    # For each result, plot the corresponding boxplots
     for i, (mode, res) in enumerate(results_dict.items()):
         group_data = []
         group_labels = []
@@ -54,10 +59,8 @@ def plot_results(data, pytorch_data, output, output_format, dicts):
             group_data.append(d['time'])
             group_labels.append(d['format'])
 
-        title = dicts['modes_dict'][mode]
-        savepath = f"{output}/{dicts['modes_dict'][mode]}.{output_format}"
-
         axs[i].boxplot(group_data, labels=group_labels, vert=0)
+        title = dicts['modes_dict'][mode]
         axs[i].set_title(f"{chr(i + 97)}) {title}")
 
     for j in range(len(results_dict), len(axs)):
@@ -68,35 +71,47 @@ def plot_results(data, pytorch_data, output, output_format, dicts):
     plt.close()
 
 
-parser = argparse.ArgumentParser(
-    description="shows the results of the sparse matrix benchmarking script in clear formats")
-
-parser.add_argument("-f", "--file", help="path to JSON file generated with sparse matrix benchmarking", required=True)
-parser.add_argument("-ptf", "--pytorch_file", help="path to JSON file generated with pytorch benchmarking")
-parser.add_argument("-o", "--output",
-                    help="specifies the folder in which to save the generated plot(s) (default: ./plots)",
-                    default="./plots")
-parser.add_argument("-fmt", "--format", help="specifies the output files format (default: pdf)", default="pdf")
-
-args = parser.parse_args()
+# Check if the script has been imported as a module
+if __name__ != "__main__":
+    raise ImportError("This script cannot be imported as a module")
 
 try:
+    # Define arguments
+    parser = argparse.ArgumentParser(
+        description="shows the results of the sparse matrix benchmarking script in clear formats")
+
+    parser.add_argument("-f", "--file", help="path to JSON file generated with sparse matrix benchmarking", required=True)
+    parser.add_argument("-ptf", "--pytorch_file", help="path to JSON file generated with pytorch benchmarking")
+    parser.add_argument("-o", "--output",
+                        help="specifies the folder in which to save the generated plot(s) (default: ./plots)",
+                        default="./plots")
+    parser.add_argument("-fmt", "--format", help="specifies the output files format (default: pdf)", default="pdf")
+
+    args = parser.parse_args()
+
+    # Load results JSON
     with open(args.file, "r") as read_file:
         data = json.load(read_file)
 
+    # Load dictionaries for format and modes definitions
     with open("./dicts.json", "r") as read_file:
         dicts = json.load(read_file)
 
+    # Clean output path
     cleaned_path = args.output.rstrip('/')
     if not os.path.exists(cleaned_path):
         os.makedirs(cleaned_path)
 
+    # Load corresponding PyTorch file if exists
     pytorch_data = None
     if args.pytorch_file is not None:
         with open(args.pytorch_file, "r") as read_file:
             pytorch_data = json.load(read_file)
 
+    # Plot results in boxplots
     plot_results(data, pytorch_data, cleaned_path, args.format, dicts)
+
+    # Calculate detailed statistics
     stats = [
         ["Format", "Benchmark", "Min", "P25", "P50 (Median)", "P75", "Max", "Standard Deviation", "Mean", "Variance",
          "Range"]]
@@ -134,9 +149,12 @@ try:
                     st.variance(res['time']) * 1000,
                     max(res['time']) - min(res['time']) * 1000
                 ])
+
+    # Output statistics to CSV file
     vectorized_format = np.vectorize(format_float)
     arr = np.array(stats)
     arr[1:, 2:] = vectorized_format(arr[1:, 2:])
     np.savetxt(f"{cleaned_path}/stats.csv", arr, fmt='%s', delimiter=', ')
 except Exception as e:
     print(e)
+    exit(1)

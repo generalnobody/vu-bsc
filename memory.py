@@ -6,27 +6,28 @@ import argparse
 import numpy as np
 from loader import *
 
+# Check if the script has been imported as a module
+if __name__ != "__main__":
+    raise ImportError("This script cannot be imported as a module")
 
 try:
+    # Load formats dictionary form JSON
     with open("./dicts.json", "r") as read_file:
         dicts = json.load(read_file)
-
         format_options = list(dicts['formats_dict'].keys())[:-1]
-except Exception as e:
-    print(e)
-    exit(1)
 
-parser = argparse.ArgumentParser(description="calculates the number of bytes used by each format with the provided matrix (does not support pytorch library)")
+    # Define arguments
+    parser = argparse.ArgumentParser(description="calculates the number of bytes used by each format with the provided matrix (does not support pytorch library)")
 
-parser.add_argument("-i", "--input", help="input file, MatrixMarket format", required=True)
-parser.add_argument('-o', '--output', help="CSV file to output result to; if not specified, only prints result to stdout (optional)")
+    parser.add_argument("-i", "--input", help="input file, MatrixMarket format", required=True)
+    parser.add_argument('-o', '--output', help="CSV file to output result to; if not specified, only prints result to stdout (optional)")
 
-args = parser.parse_args()
+    args = parser.parse_args()
 
-if args.output is not None and not args.output.endswith(".csv"):
-    parser.error("input file format should be MatrixMarket, with .mtx extension")
+    if args.output is not None and not args.output.endswith(".csv"):
+        parser.error("input file format should be MatrixMarket, with .mtx extension")
 
-try:
+    # Load matrix and get its basic statistics
     temp_mtx = load_mm_file(args.input, 'coo', False)
     if temp_mtx is None:
         parser.error("unknown input file format")
@@ -37,28 +38,19 @@ try:
     print(f"Number of non-zero entries in matrix is {nnz}. The type is {entry_type} with size {entry_size} bytes.\n"
           f"The non-zero entries require {base_bytes} bytes.")
 
-    print("\nTheoretical memory usage per format (explanation):")
-    print("COO - stores triplets (i,j,v) where i and j are int32 (4 bytes) and v is float64 (8 bytes)")
-    print(
-        "CSR - stores row pointers, column indices, and values. Requires storage for row pointers (number of rows + 1) (int32, to 4 bytes per entry), column indices (int32, to 4 bytes per entry), values")
-    print("CSC - same as CSR, but for columns")
-    print("DIA - stores data for diagonals, if lot of bytes, suggests many diagonals or inefficient diagonals")
-    print("BSR - stores blocks of values, size depends on block size or density pattern")
-    print(
-        "LIL - stores each row as a list. Size depends on how efficient construction is but is generally close to theoretical number of bytes required + a bit of overhead")
-    print(
-        "DOK - stores everything in a dictionary, using indices as keys and values as values. Flexible but usually extremely high overhead, due to both Python's dict structure and the tuple keys")
-
+    # Prepare results table
     num_rows = temp_mtx.shape[0]
     num_cols = temp_mtx.shape[1]
     print("\nMemory usage:")
     results = [["Format", "Theoretical Size (bytes)", "Actual Size (bytes)", "Overhead Ratio (percent)", "Overhead to Base (percent)"],
                ["Base", str(base_bytes), str(base_bytes), "0", "0"]]
     for fmt in format_options:
+        # Load matrix in different formats
         mtx = load_mm_file(args.input, fmt, False)
         if mtx is None:
             parser.error("input file format should be MatrixMarket, with .mtx extension")
 
+        # Calculate theoretically required amount of memory for the matrix in a particular format
         new_result = [fmt.upper()]
         theoretical_size = -1
         if fmt == "coo":
@@ -81,6 +73,7 @@ try:
             theoretical_size = nnz * 2 * 4 + nnz * 8  # This excludes dict structure overhead
         new_result.append(str(theoretical_size))
 
+        # Measure loaded matrix size
         actual_size = asizeof.asizeof(mtx)
         new_result.append(str(actual_size))
 
@@ -90,17 +83,21 @@ try:
         overhead_to_base = ((actual_size - base_bytes) / base_bytes) * 100
         new_result.append(f"{overhead_to_base:.2f}")
 
+        # Populate results table
         results.append(new_result)
 
+    # Style and print table to stdout
     col_widths = [max(len(item) for item in col) for col in zip(*results)]
     for res in results:
         print("    ".join(f"{item.ljust(width)}" for item, width in zip(res, col_widths)))
 
+    # If location provided, output table to file (CSV)
     if args.output is not None:
         arr = np.array(results)
         np.savetxt(args.output, arr, fmt='%s', delimiter=', ')
 except Exception as e:
     print(e)
+    exit(1)
 
 
 

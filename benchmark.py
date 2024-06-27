@@ -8,6 +8,7 @@ def benchmark(func, *args, reps=0):
         return None
 
     result = []
+    # Repeat benchmark 'reps' times
     for _ in range(reps):
         t1 = time.time()
         func(*args)

@@ -12,8 +12,6 @@ def is_mm_format(file_path):
             line = file.readline()
             file.close()
 
-        # print(line)
-
         if line.startswith("%%MatrixMarket") and "matrix" in line \
                 and "coordinate" in line:
             return True
@@ -25,7 +23,7 @@ def is_mm_format(file_path):
         return False
 
 
-# Loads the file into one of the chosen sparse matrix formats
+# Loads the file into one of the chosen Sparse Matrix formats
 def load_mm_file(file_path, fmt, pytorch):
     try:
         if not is_mm_format(file_path):
@@ -35,6 +33,7 @@ def load_mm_file(file_path, fmt, pytorch):
 
         return_matrix = None
 
+        # Load matrix into chosen format, SciPy implementation
         if fmt == "coo":
             return_matrix = coo_matrix(sparse_matrix)
         elif fmt == "csr":
@@ -42,7 +41,7 @@ def load_mm_file(file_path, fmt, pytorch):
         elif fmt == "csc":
             return_matrix = csc_matrix(sparse_matrix)
         elif fmt == "dia":
-            # Filter out the SparseEfficiencyWarning
+            # Filter out the SparseEfficiencyWarning, which is emitted when loading into DIA with a non-diagonal matrix
             warnings.filterwarnings("ignore", category=SparseEfficiencyWarning)
             return_matrix = dia_matrix(sparse_matrix)
         elif fmt == "bsr":
@@ -54,6 +53,7 @@ def load_mm_file(file_path, fmt, pytorch):
         else:
             print("Error: unknown format '{}'".format(fmt))
 
+        # If PyTorch used, change matrix to PyTorch matrix
         if pytorch and return_matrix is not None:
             dense_matrix = return_matrix.toarray()
             torch_matrix = torch.tensor(dense_matrix, dtype=torch.float64)

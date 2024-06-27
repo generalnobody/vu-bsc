@@ -13,6 +13,7 @@ def mtx_subtraction(mtx_a, mtx_b):
         return torch.add(mtx_a, mtx_b, alpha=-1)
     return mtx_a - mtx_b
 
+
 def mtx_scalar_multiplication(scalar, mtx):
     return scalar * mtx
 
