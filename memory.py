@@ -68,7 +68,7 @@ try:
             theoretical_size = num_blocks * (block_size[0] * block_size[1]) * 8 + num_blocks * 4 + (
                     int(num_rows / block_size[0]) + 1) * 4
         elif fmt == "lil":
-            theoretical_size = nnz * 4 + nnz * 8 + num_rows * 4
+            theoretical_size = nnz * 4 + nnz * 8
         elif fmt == "dok":
             theoretical_size = nnz * 2 * 4 + nnz * 8  # This excludes dict structure overhead
         new_result.append(str(theoretical_size))
